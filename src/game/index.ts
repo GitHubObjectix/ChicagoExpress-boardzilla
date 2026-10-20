@@ -36,20 +36,8 @@ class RailwayCompany extends Space<ChicagoExpressGame> {
   }
 }
 
-/**
- * Following section defines the different types of pieces in Chicago Express.
- * These are stocks, trains and houses.
- */
-export class Stock extends Piece<ChicagoExpressGame> {
-}
-
-export class Train extends Piece<ChicagoExpressGame> {
-  color: 'red' | 'blue' | 'green' | 'yellow' | 'black';
-}
-
-export class CounterPiece extends Piece<ChicagoExpressGame> {
-  color: 'red' | 'blue' | 'green' | 'yellow' | 'black';
-}
+export class Scenery extends Space<ChicagoExpressGame> { }
+export class PlayerTableau extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
 
 /**
  * Main game definitions.
@@ -59,6 +47,14 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   const { action } = game;
   const { playerActions, loop, whileLoop, eachPlayer, forEach, ifElse } = game.flowCommands;
 
+  game.create(Scenery, 'scenery');
+
+  // create tableau spaces for each player
+  for (const player of game.players) {
+    game.create(PlayerTableau, `player-tableau-${player.position}`, { player });
+  }
+
+  // create spaces for Wabash and the other railway companies
   const wabashCompany : RailwayCompany = game.create(RailwayCompany, 'Wabash',{companyName: "Wabash Railroad Company", abbreviation: 'Wabash', trains: 11, balance: 2, stocks: 0, initialBid: 0}) as RailwayCompany;
   const railwayCompanies: RailwayCompany[] = [
     game.create(RailwayCompany, 'PRR', {companyName: 'The Pennsylvania Railroad Company', abbreviation: 'PRR', trains: 20, balance: 3, stocks: 0, initialBid: 6}) as RailwayCompany,
@@ -118,7 +114,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
             eachPlayer({
               name: 'biddingPlayer',
               do: ifElse({
-                if: (args) => !args.biddingPlayer.passedThisAuction || !args.biddingPlayer.hasPlacedBid,
+                if: (args) => !args.biddingPlayer.passedThisAuction && ( !args.biddingPlayer.hasPlacedBid || game.players.filter(player => !player.passedThisAuction).length > 1 ),
                 do: playerActions({ actions: ["bid", "pass"] }),
               }),
             }),
