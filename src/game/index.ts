@@ -10,31 +10,30 @@ import {
 export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpressPlayer> {
   balance: number = 0;
   passedThisAuction: boolean = false;
+  hasPlacedBid: boolean = false;
 }
 
 export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressPlayer> {
   lastBid: number = 0
 }
 
-class RailwayCompany {
-  name: string = "";
+class RailwayCompany extends Space<ChicagoExpressGame> {
+  color: 'red' | 'blue' | 'green' | 'yellow' | 'black';
+  companyName: string = "";
   abbreviation: string = "";
   trains: number = 0;
   balance: number = 0;
   stocks: number = 0;
+  initialBid: number = 0;
 
-  constructor(name: string, abbreviation: string, trains: number, balance: number, stocks: number) {
-    this.name = name;
+  initialize(companyName: string, abbreviation: string, trains: number, balance: number, stocks: number, initialBid: number = 0) {
+    this.companyName = companyName;
     this.abbreviation = abbreviation;
     this.trains = trains;
     this.balance = balance;
     this.stocks = stocks;
+    this.initialBid = initialBid;
   }
-}
-
-export class RailwayCompanySpace extends Space<ChicagoExpressGame> {
-  color: 'red' | 'blue' | 'green' | 'yellow' | 'black';
-  company: RailwayCompany;
 }
 
 /**
@@ -58,25 +57,15 @@ export class CounterPiece extends Piece<ChicagoExpressGame> {
 export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   const { action } = game;
-  const { playerActions, loop, whileLoop, eachPlayer, ifElse } = game.flowCommands;
+  const { playerActions, loop, whileLoop, eachPlayer, forEach, ifElse } = game.flowCommands;
 
-  const wabashCompany = new RailwayCompany('Wabash Railroad Company', 'Wabash', 11, 2, 0);
+  const wabashCompany : RailwayCompany = game.create(RailwayCompany, 'Wabash',{companyName: "Wabash Railroad Company", abbreviation: 'Wabash', trains: 11, balance: 2, stocks: 0, initialBid: 0}) as RailwayCompany;
   const railwayCompanies: RailwayCompany[] = [
-    new RailwayCompany('The Pennsylvania Railroad Company', 'PRR', 20, 3, 0),
-    new RailwayCompany('Baltimore & Ohio', 'BandO', 22, 4, 0),
-    new RailwayCompany('New York Central', 'NYC', 24, 5, 0),
-    new RailwayCompany('Chesapeake & Ohio', 'CandO', 26, 6, 0),
+    game.create(RailwayCompany, 'PRR', {companyName: 'The Pennsylvania Railroad Company', abbreviation: 'PRR', trains: 20, balance: 3, stocks: 0, initialBid: 6}) as RailwayCompany,
+    game.create(RailwayCompany, 'BandO', {companyName: 'Baltimore & Ohio', abbreviation: 'BandO', trains: 22, balance: 4, stocks: 0, initialBid: 5}) as RailwayCompany,
+    game.create(RailwayCompany, 'NYC', {companyName: 'New York Central', abbreviation: 'NYC', trains: 24, balance: 5, stocks: 0, initialBid: 4}) as RailwayCompany,
+    game.create(RailwayCompany, 'CandO', {companyName: 'Chesapeake & Ohio', abbreviation: 'CandO', trains: 26, balance: 6, stocks: 0, initialBid: 7}) as RailwayCompany,
   ]
-
-  game.create(RailwayCompanySpace, wabashCompany.abbreviation, { company: wabashCompany });
-  railwayCompanies.forEach((railwayCompany: RailwayCompany) => {
-    game.create(RailwayCompanySpace, railwayCompany.abbreviation, { company: railwayCompany });
-  })
-
-  // const map = game.create(ConnectedSpaceMap, 'scenery-map');
-  // const space1 = map.create(Space, 'space1');
-  // const space2 = map.create(Space, 'space2');
-  // map.connect(space1, space2, 1);
 
   game.defineActions({
     bid: player => action({
@@ -89,7 +78,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
         max: player.balance,
       }
     ).do(
-      ({ amount }) => game.lastBid = amount
+      ({ amount }) => { game.lastBid = amount, player.hasPlacedBid = true }
     ).message(
       `{{player}} bid {{amount}}`
     ),
@@ -106,34 +95,72 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   game.defineFlow(
     // Initial set up of start values (balances, etc)
-    () => { 
+    () => {
       // start balance is 120$ and is divided equally among all players
       game.players.forEach(player => { player.balance = 120 / game.players.length; })
       // TODO! select the players who starts the game
     },
+
+    // Initial auction phase
+    forEach({
+      name: 'company',
+      collection: () => railwayCompanies,
+      do: [
+        // Preparation: initialize minimum start bid (one less as described in the rules as minimum bid is increased by 1 on each bid)
+        ({ company }) => {
+          game.message(company.name + " is up for auction. Starting bid is " + company.initialBid);
+          (game as ChicagoExpressGame).lastBid = company.initialBid;
+          game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
+        },
+        // Execution: let each player bid or pass until only one player is left
+        whileLoop({
+          while: () => game.players.filter(player => !player.passedThisAuction).length > 1, do:
+            eachPlayer({
+              name: 'biddingPlayer',
+              do: ifElse({
+                if: (args) => !args.biddingPlayer.passedThisAuction || !args.biddingPlayer.hasPlacedBid,
+                do: playerActions({ actions: ["bid", "pass"] }),
+              }),
+            }),
+        }),
+        // Collection: determine the winner and deduct the winning bid from their balance
+        ({ company }) => {
+          const succeedingBidder = game.players.findIndex(player => !player.passedThisAuction);
+          if (succeedingBidder !== -1) {
+            const winningPlayer = game.players[succeedingBidder];
+            winningPlayer.balance -= game.lastBid;
+            game.message(`{{winningPlayer}} won the auction with a bid of {{lastBid}}`, { winningPlayer, lastBid: game.lastBid });
+          } else {
+            game.message("No player won the auction");
+          }
+        },
+      ],
+    }),
+
+
     // Initial auction phase
     // Preparation: initialize minimum start bid (one less as described in the rules as minimum bid is increased by 1 on each bid)
-    () => { (game as ChicagoExpressGame).lastBid = 6 },
-    // Execution: let each player bid or pass until only one player is left
-    whileLoop({ while: () => game.players.filter(player => !player.passedThisAuction).length > 1, do: 
-      eachPlayer({
-        name: 'biddingPlayer',
-        do: ifElse ({
-          if: (args) => !args.biddingPlayer.passedThisAuction && game.players.filter(player => !player.passedThisAuction).length > 1,
-          do: playerActions({ actions: ["bid", "pass"] }),
-        }),
-      }),
-    }),
-    // Collection: determine the winner and deduct the winning bid from their balance
-    () => {
-      const succeedingBidder = game.players.findIndex(player => !player.passedThisAuction);
-      if (succeedingBidder !== -1) {
-        const winningPlayer = game.players[succeedingBidder];
-        winningPlayer.balance -= game.lastBid;
-        game.message(`{{winningPlayer}} won the auction with a bid of {{lastBid}}`, { winningPlayer, lastBid: game.lastBid });
-      } else {
-        game.message("No player won the auction");
-      }
-    }
+    // () => { (game as ChicagoExpressGame).lastBid = 6 },
+    // // Execution: let each player bid or pass until only one player is left
+    // whileLoop({ while: () => game.players.filter(player => !player.passedThisAuction).length > 1, do:
+    //   eachPlayer({
+    //     name: 'biddingPlayer',
+    //     do: ifElse ({
+    //       if: (args) => !args.biddingPlayer.passedThisAuction || !args.biddingPlayer.hasPlacedBid,
+    //       do: playerActions({ actions: ["bid", "pass"] }),
+    //     }),
+    //   }),
+    // }),
+    // // Collection: determine the winner and deduct the winning bid from their balance
+    // () => {
+    //   const succeedingBidder = game.players.findIndex(player => !player.passedThisAuction);
+    //   if (succeedingBidder !== -1) {
+    //     const winningPlayer = game.players[succeedingBidder];
+    //     winningPlayer.balance -= game.lastBid;
+    //     game.message(`{{winningPlayer}} won the auction with a bid of {{lastBid}}`, { winningPlayer, lastBid: game.lastBid });
+    //   } else {
+    //     game.message("No player won the auction");
+    //   }
+    // }
   );
 });
