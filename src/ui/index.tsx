@@ -40,7 +40,7 @@ render(setup, {
   },
   layout: (game, player, boardSize) => {
     game.disableDefaultAppearance();
-    game.showLayoutBoundingBoxes();
+    //game.showLayoutBoundingBoxes();
 
     game.all(Scenery).appearance({
       render: () => (
@@ -48,8 +48,22 @@ render(setup, {
           className="board-scenery-image"
           src={boardImage}
           alt="Chicago Express game board"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+          }}
         />
       ),
+    });
+
+    game.layout('scenery', {
+      area: {
+        left: 0,
+        top: 0,
+        width: 100,
+        height: 100,
+      },
     });
 
     game.all('PRR-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_PRR}/> ) });
@@ -60,15 +74,6 @@ render(setup, {
     game.all('BandO-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_BandO}/> ) });
     game.all('NYC-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_NYC}/> ) });
     game.all('CandO-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_CandO}/> ) });
-
-    game.layout('scenery', {
-      area: {
-        left: 0,
-        top: 0,
-        width: 100,
-        height: 100,
-      },
-    });
 
     game.all(PlayerTableau).appearance({
       render: (tableau) => {
@@ -112,10 +117,11 @@ render(setup, {
 
     // position the railway company charters
     const charterHeight = 20;
+    const charterGap = 10;
     ChicagoExpressSetup.railwayCompanies.slice(1).forEach((company, index) => {
-      game.layout(company.id, { area: { left: 75, top: 10 + (index * charterHeight), width: 25, height: 20 }});
-      game.all(company.id).layout("trains", { area: { left:0, top: 0, width: 35, height: 100 }});
-      game.all(company.id).layout("stocks", { area: { left:35, top: 50, width: 100, height: 50 }});
+      game.layout(company.id, { area: { left: 80, top: 10 + (index * charterHeight), width: 25, height: charterHeight }});
+      game.all(company.id).layout("trains", { area: { left:0, top: 0, width: 45, height: 100 }});
+      game.all(company.id).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
     });
 
     // define the layout of the trains and stocks pile on each railway company charter
