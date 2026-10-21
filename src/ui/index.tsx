@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   render,
-  ProfileBadge,
 } from '@boardzilla/core';
 import {
   default as setup,
@@ -99,7 +98,8 @@ render(setup, {
       (70 - panelGap * (playerCount - 1)) / playerCount;
 
     players.forEach((p, index) => {
-      game.layout(`player-tableau-${p.position}`, {
+      const tableau = p.my('player-tableau') as PlayerTableau;
+      game.layout(tableau, {
         area: {
           left: 0,
           top: index * (panelHeight + panelGap),
@@ -107,6 +107,7 @@ render(setup, {
           height: panelHeight,
         },
       });
+      game.all(tableau).layout("stocks", {area: { left: 1, top: 30, width: 98, height: 65 }});
     });
 
     // position the railway company charters
@@ -119,6 +120,6 @@ render(setup, {
 
     // define the layout of the trains and stocks pile on each railway company charter
     game.all("trains").layout(Train, { offsetRow: {x: -50, y: 100}, offsetColumn: 100, haphazardly: 2, });
-    game.all("stocks").layout(Stock, { rows: {max: 1}, offsetColumn: {x: 5, y: 5}, direction: 'ltr', });
+    game.all("stocks").layout(Stock, { rows: {max: 1}, offsetColumn: {x: 15, y: 15}, direction: 'ltr', });
   }
 });
