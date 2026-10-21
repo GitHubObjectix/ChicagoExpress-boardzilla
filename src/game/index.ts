@@ -7,6 +7,10 @@ import {
   ConnectedSpaceMap,
 } from '@boardzilla/core';
 
+import {
+  ChicagoExpressSetup
+} from './game-setup.js'
+
 export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpressPlayer> {
   balance: number = 0;
   passedThisAuction: boolean = false;
@@ -15,29 +19,20 @@ export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpr
 
 export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressPlayer> {
   lastBid: number = 0
+
+  // contains spaces for each railway company in order as defined by RailwayCompanies enum
+  railwayCompanies: RailwayCompany[] = [];
 }
 
-class RailwayCompany extends Space<ChicagoExpressGame> {
-  color: 'red' | 'blue' | 'green' | 'yellow' | 'black';
-  companyName: string = "";
-  abbreviation: string = "";
-  trains: number = 0;
-  balance: number = 0;
-  stocks: number = 0;
+export class RailwayCompany extends Space<ChicagoExpressGame> {
   initialBid: number = 0;
-
-  initialize(companyName: string, abbreviation: string, trains: number, balance: number, stocks: number, initialBid: number = 0) {
-    this.companyName = companyName;
-    this.abbreviation = abbreviation;
-    this.trains = trains;
-    this.balance = balance;
-    this.stocks = stocks;
-    this.initialBid = initialBid;
-  }
 }
 
 export class Scenery extends Space<ChicagoExpressGame> { }
 export class PlayerTableau extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
+
+export class Train extends Piece<ChicagoExpressGame> {}
+export class Stock extends Piece<ChicagoExpressGame> {}
 
 /**
  * Main game definitions.
@@ -55,13 +50,17 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   }
 
   // create spaces for Wabash and the other railway companies
-  const wabashCompany : RailwayCompany = game.create(RailwayCompany, 'Wabash',{companyName: "Wabash Railroad Company", abbreviation: 'Wabash', trains: 11, balance: 2, stocks: 0, initialBid: 0}) as RailwayCompany;
-  const railwayCompanies: RailwayCompany[] = [
-    game.create(RailwayCompany, 'PRR', {companyName: 'The Pennsylvania Railroad Company', abbreviation: 'PRR', trains: 20, balance: 3, stocks: 0, initialBid: 6}) as RailwayCompany,
-    game.create(RailwayCompany, 'BandO', {companyName: 'Baltimore & Ohio', abbreviation: 'BandO', trains: 22, balance: 4, stocks: 0, initialBid: 5}) as RailwayCompany,
-    game.create(RailwayCompany, 'NYC', {companyName: 'New York Central', abbreviation: 'NYC', trains: 24, balance: 5, stocks: 0, initialBid: 4}) as RailwayCompany,
-    game.create(RailwayCompany, 'CandO', {companyName: 'Chesapeake & Ohio', abbreviation: 'CandO', trains: 26, balance: 6, stocks: 0, initialBid: 7}) as RailwayCompany,
-  ]
+  ChicagoExpressSetup.railwayCompanies.slice(1).forEach((company, index) => {
+    var thisCompany = game.create(RailwayCompany, company.id,
+      {initialBid: company.initialBid});
+
+    var trains = thisCompany.create(Space, 'trains');
+    trains.createMany(company.trains, Train, `${company.id}-train`);
+    var stocks = thisCompany.create(Space, 'stocks');
+    stocks.createMany(company.stocks, Stock, `${company.id}-stock`)
+
+    game.railwayCompanies.push(thisCompany)
+  })
 
   game.defineActions({
     bid: player => action({
@@ -100,12 +99,12 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     // Initial auction phase
     forEach({
       name: 'company',
-      collection: () => railwayCompanies,
+      collection: () => game.railwayCompanies.slice(1),
       do: [
         // Preparation: initialize minimum start bid (one less as described in the rules as minimum bid is increased by 1 on each bid)
         ({ company }) => {
           game.message(company.name + " is up for auction. Starting bid is " + company.initialBid);
-          (game as ChicagoExpressGame).lastBid = company.initialBid;
+          game.lastBid = company.initialBid - 1;
           game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
         },
         // Execution: let each player bid or pass until only one player is left
@@ -132,31 +131,5 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
         },
       ],
     }),
-
-
-    // Initial auction phase
-    // Preparation: initialize minimum start bid (one less as described in the rules as minimum bid is increased by 1 on each bid)
-    // () => { (game as ChicagoExpressGame).lastBid = 6 },
-    // // Execution: let each player bid or pass until only one player is left
-    // whileLoop({ while: () => game.players.filter(player => !player.passedThisAuction).length > 1, do:
-    //   eachPlayer({
-    //     name: 'biddingPlayer',
-    //     do: ifElse ({
-    //       if: (args) => !args.biddingPlayer.passedThisAuction || !args.biddingPlayer.hasPlacedBid,
-    //       do: playerActions({ actions: ["bid", "pass"] }),
-    //     }),
-    //   }),
-    // }),
-    // // Collection: determine the winner and deduct the winning bid from their balance
-    // () => {
-    //   const succeedingBidder = game.players.findIndex(player => !player.passedThisAuction);
-    //   if (succeedingBidder !== -1) {
-    //     const winningPlayer = game.players[succeedingBidder];
-    //     winningPlayer.balance -= game.lastBid;
-    //     game.message(`{{winningPlayer}} won the auction with a bid of {{lastBid}}`, { winningPlayer, lastBid: game.lastBid });
-    //   } else {
-    //     game.message("No player won the auction");
-    //   }
-    // }
   );
 });
