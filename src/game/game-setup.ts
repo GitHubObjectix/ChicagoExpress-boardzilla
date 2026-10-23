@@ -22,4 +22,5 @@ export class ChicagoExpressSetup {
     {id: "NYC", name: "New York Central", trains: 24, stocks: 5, initialBid: 5},
     {id: "CandO", name: "Chesapeake & Ohio", trains: 6, stocks: 6, initialBid: 8},
   ]
+  static readonly houses: number = 20;
 }

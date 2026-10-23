@@ -8,7 +8,8 @@ import {
 } from '@boardzilla/core';
 
 import {
-  ChicagoExpressSetup
+  ChicagoExpressSetup,
+  RailwayCompanies
 } from './game-setup.js'
 
 export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpressPlayer> {
@@ -30,11 +31,15 @@ export class RailwayCompany extends Space<ChicagoExpressGame> {
   initialBid: number = 0;
 }
 
-export class Scenery extends Space<ChicagoExpressGame> { }
+export class Board extends Space<ChicagoExpressGame> { }
 export class PlayerTableau extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
+export class AuctionGauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
+export class DevelopmentGauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
+export class RouteConstructionGauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
 
 export class Train extends Piece<ChicagoExpressGame> {}
 export class Stock extends Piece<ChicagoExpressGame> {}
+export class House extends Piece<ChicagoExpressGame> {}
 
 /**
  * Main game definitions.
@@ -44,7 +49,29 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   const { action } = game;
   const { playerActions, loop, whileLoop, eachPlayer, forEach, ifElse } = game.flowCommands;
 
-  game.create(Scenery, 'scenery');
+  const board = game.create(Board, 'board');
+
+  const housePile = board.create(Space, "house-pile");
+  housePile.createMany(ChicagoExpressSetup.houses, House, 'house');
+
+  const industrialTrack = board.create(Space, "industrial-city-track");
+  for(let i = 0; i < 8; i++) { var cell = industrialTrack.create(Space, `detroit-${i}`);};
+  for(let i = 0; i < 4; i++) { industrialTrack.create(Space, `wheeling-${i}`)};
+  for(let i = 0; i < 3; i++) { industrialTrack.create(Space, `pittsburgh-${i}`)};
+  industrialTrack.first(Space, 'detroit-0')!.createMany(1, House, 'house');
+  industrialTrack.first(Space, 'wheeling-0')!.createMany(1, House, 'house');
+  industrialTrack.first(Space, 'pittsburgh-0')!.createMany(1, House, 'house');
+
+  board.create(AuctionGauge, "auction-gauge");
+  board.create(DevelopmentGauge, "development-gauge");
+  board.create(RouteConstructionGauge, "route-construction-gauge");
+
+  const wabashId = ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id
+  const wabash = board.create(RailwayCompany, wabashId, {initialBid: 0});
+  var trains = wabash.create(Space, 'trains');
+  trains.createMany(ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].trains, Train, `${wabashId}-train`);
+  var stocks = wabash.create(Space, 'stocks');
+  stocks.createMany(ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].stocks, Stock, `${wabashId}-stock`);
 
   // create tableau spaces for each player
   for (const player of game.players) {
