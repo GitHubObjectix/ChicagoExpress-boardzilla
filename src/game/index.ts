@@ -36,6 +36,8 @@ export class PlayerTableau extends Space<ChicagoExpressGame, ChicagoExpressPlaye
 export class AuctionGauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
 export class DevelopmentGauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
 export class RouteConstructionGauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
+//export class Map extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
+export class HexagonalField extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
 
 export class Train extends Piece<ChicagoExpressGame> {}
 export class Stock extends Piece<ChicagoExpressGame> {}
@@ -50,6 +52,14 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   const { playerActions, loop, whileLoop, eachPlayer, forEach, ifElse } = game.flowCommands;
 
   const board = game.create(Board, 'board');
+
+  const map = board.create(ConnectedSpaceMap, 'map');
+  ChicagoExpressSetup.columnConfiguration.forEach((column, columnIndex) => {
+    for(let row = column[0]; row <= column[1]; ++row)
+    {
+      map.create(HexagonalField, `hex-${row}-${columnIndex}`);
+    }
+  })
 
   const housePile = board.create(Space, "house-pile");
   housePile.createMany(ChicagoExpressSetup.houses, House, 'house');

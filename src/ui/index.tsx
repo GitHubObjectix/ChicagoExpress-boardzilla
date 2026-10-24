@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   render,
+  Space
 } from '@boardzilla/core';
 import {
   default as setup,
@@ -50,6 +51,29 @@ render(setup, {
 
     game.all(Board).layout('house-pile', { area: { left: 21.5, top: 68.2, width: 18.7, height: 11.17 }});
     game.all('house-pile').layout(House, { offsetRow: {x: -50, y: 100}, offsetColumn: 100, haphazardly: 2, });
+
+    const columnLeft: number[] = [ 2.8, 7.75 ];
+    const columnTop: number[] = [ 4.1, 7.0 ];
+    const hexHeight = 5.8;
+    const hexWidth = 6.65;
+    const hexColGap = 3.1;
+
+    const map = game.all('map');
+
+    type HexSlot = { left: number; top: number; width: number; height: number; };
+    const slots: HexSlot[] = [];
+    ChicagoExpressSetup.columnConfiguration.forEach((column, columnIndex) => {
+      for (let row = column[0]; row <= column[1]; ++row) {
+        slots.push({
+          left: columnLeft[columnIndex % 2] + Math.trunc(columnIndex / 2) * ( hexWidth + hexColGap ),
+          top: columnTop[columnIndex % 2] + row * hexHeight,
+          width: hexWidth,
+          height: hexHeight
+        })
+      }
+    });
+
+    map.configureLayout({ slots });
 
     const industrialCityTrackCellWidth = 11;
     const industrialCityTrackCellHeight = 32  ;

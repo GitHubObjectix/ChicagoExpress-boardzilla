@@ -23,4 +23,26 @@ export class ChicagoExpressSetup {
     {id: "CandO", name: "Chesapeake & Ohio", trains: 6, stocks: 6, initialBid: 8},
   ]
   static readonly houses: number = 20;
+
+  static readonly columnConfiguration: [number, number][] = [
+    [2, 4],
+    [2, 6],
+    [0, 7],
+    [0, 7],
+    [0, 8],
+    [1, 8],
+    [2, 9],
+    [2, 9],
+    [2, 10],
+    [1, 9],
+    [1, 10],
+    [0, 9],
+    [0, 10],
+    [0, 9],
+    [0, 10],
+    [0, 9],
+    [0, 9],
+    [0, 6],
+    [0, 5]
+  ]
 }

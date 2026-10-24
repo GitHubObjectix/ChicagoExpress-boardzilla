@@ -13,22 +13,16 @@
 }
 
 .AuctionGauge {
-  background-image: url(./assets/chicago-express-board.jpg);
-  background-size: contain;
   visibility: visible;
   clip-path: circle(50%);
 }
 
 .DevelopmentGauge {
-  background-image: url(./assets/chicago-express-board.jpg);
-  background-size: contain;
   visibility: visible;
   clip-path: circle(50%);
 }
 
 .RouteConstructionGauge {
-  background-image: url(./assets/chicago-express-board.jpg);
-  background-size: contain;
   visibility: visible;
   clip-path: circle(50%);
 }
@@ -88,6 +82,20 @@
   background-size: 100% 100%;
   //background-position: center;
   background-repeat: no-repeat;
+}
+
+.HexagonalField {
+  // background-image: url("./assets/chicago-express-board.jpg");
+  // background-size: contain;
+  visibility: visible;
+  clip-path: polygon(
+    25% 0%,
+    75% 0%,
+    100% 50%,
+    75% 100%,
+    25% 100%,
+    0% 50%
+  );
 }
 
 #PRR {
