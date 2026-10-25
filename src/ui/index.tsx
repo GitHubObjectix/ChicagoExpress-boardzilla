@@ -15,7 +15,8 @@ import {
   ChicagoExpressGame,
   AuctionGauge,
   DevelopmentGauge,
-  RouteConstructionGauge
+  RouteConstructionGauge,
+  HexagonalField
 } from '../game/index.js';
 
 import { ChicagoExpressSetup, RailwayCompanies } from '../game/game-setup.js';
@@ -72,7 +73,6 @@ render(setup, {
         })
       }
     });
-
     map.configureLayout({ slots });
 
     const industrialCityTrackCellWidth = 11;
@@ -166,5 +166,7 @@ render(setup, {
     // define the layout of the trains and stocks pile on each railway company charter
     game.all("trains").layout(Train, { offsetRow: {x: -50, y: 100}, offsetColumn: 100, haphazardly: 2, });
     game.all("stocks").layout(Stock, { rows: {max: 1}, offsetColumn: {x: 15, y: 15}, direction: 'ltr', });
+    game.all("trains-space").layout(Train, { rows: {max: 1}, offsetColumn: {x: 15, y: 15}, direction: 'ltr', size: { width: 50, height: 50 }});
+    game.all("house-space").layout(House, { size: { width: 50, height: 50 } });
   }
 });

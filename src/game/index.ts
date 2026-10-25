@@ -57,7 +57,17 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   ChicagoExpressSetup.columnConfiguration.forEach((column, columnIndex) => {
     for(let row = column[0]; row <= column[1]; ++row)
     {
-      map.create(HexagonalField, `hex-${row}-${columnIndex}`);
+      const hexField = map.create(HexagonalField, `hex-${row}-${columnIndex}`);
+
+      const trains = hexField.create(Space, 'trains-space')
+      trains.createMany(1, Train, 'PRR-train');
+      trains.createMany(1, Train, 'CandO-train');
+      trains.createMany(1, Train, 'BandO-train');
+
+      if (ChicagoExpressSetup.fieldCanBeDeveloped(row, columnIndex)) {
+        const house = hexField.create(Space, 'house-space');
+        house.createMany(1, House, 'house');
+      }
     }
   })
 
