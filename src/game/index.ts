@@ -18,6 +18,11 @@ export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpr
   hasPlacedBid: boolean = false;
 }
 
+export enum GameStates {
+  None = 0,
+  SelectAction
+}
+
 export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressPlayer> {
   lastBid: number = 0
   // player who started the auction
@@ -25,6 +30,8 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
 
   // contains spaces for each railway company in order as defined by RailwayCompanies enum
   railwayCompanies: RailwayCompany[] = [];
+
+  gameState: GameStates = GameStates.None;
 }
 
 export class RailwayCompany extends Space<ChicagoExpressGame> {

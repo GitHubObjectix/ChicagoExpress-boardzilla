@@ -17,7 +17,8 @@ import {
   AuctionGauge,
   DevelopmentGauge,
   RouteConstructionGauge,
-  HexagonalField
+  HexagonalField,
+  GameStates
 } from '../game/index.js';
 
 import { ChicagoExpressSetup, RailwayCompanies } from '../game/game-setup.js';
@@ -168,7 +169,7 @@ render(setup, {
     game.all(Gauge).appearance({
       render: (gauge) => {
         return (
-          <div className="gauge-inner">
+          <div className={`gauge-inner ${gauge.isActionPossible() && game.gameState == GameStates.SelectAction ? "highlight" : ""}`}>
             <img
               className="gauge-pointer"
               src={gaugePointer}

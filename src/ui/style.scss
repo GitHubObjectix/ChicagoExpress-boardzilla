@@ -17,6 +17,46 @@
   clip-path: circle(50%);
 }
 
+.gauge-inner.highlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 0.8em solid #f88425;
+  border-radius: 50%;
+  box-sizing: border-box;
+  pointer-events: none;
+
+  animation: gauge-flash 1s ease-in-out infinite;
+}
+
+@keyframes gauge-flash {
+  0%, 100% {
+    opacity: 0.15;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+// .AuctionGauge {
+//   visibility: visible;
+//   clip-path: circle(50%);
+//   animation: gauge-highlight 1s ease-in-out infinite;
+//   border: 0.15em solid #ffcc33;
+//   border-radius: 0.4em;
+// }
+
+// @keyframes gauge-highlight {
+//   0%, 100% {
+//     box-shadow: 0 0 0 0.1em rgb(255 204 51 / 25%);
+//   }
+
+//   50% {
+//     box-shadow: 0 0 0 0.35em rgb(255 204 51 / 70%);
+//   }
+// }
+
 .DevelopmentGauge {
   visibility: visible;
   clip-path: circle(50%);
