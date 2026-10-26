@@ -166,6 +166,23 @@ render(setup, {
       game.all(company.id).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
     });
 
+    ChicagoExpressSetup.railwayCompanies.forEach((company, index) => {
+      game.all(company.id).appearance({
+        render: (company) => {
+          const trainCompany = company as RailwayCompany;
+          return (
+            <div className="company-panel__header">
+              <div className="company-panel__cash">
+                ${trainCompany.balance}
+              </div>
+              <div className={`company-panel ${trainCompany.hasStocks() && game.gameState == GameStates.SelectCompany ? "highlight" : ""}`}>
+              </div>
+            </div>
+          );
+        }
+      });
+    });
+
     game.all(Gauge).appearance({
       render: (gauge) => {
         return (

@@ -39,24 +39,6 @@
   }
 }
 
-// .AuctionGauge {
-//   visibility: visible;
-//   clip-path: circle(50%);
-//   animation: gauge-highlight 1s ease-in-out infinite;
-//   border: 0.15em solid #ffcc33;
-//   border-radius: 0.4em;
-// }
-
-// @keyframes gauge-highlight {
-//   0%, 100% {
-//     box-shadow: 0 0 0 0.1em rgb(255 204 51 / 25%);
-//   }
-
-//   50% {
-//     box-shadow: 0 0 0 0.35em rgb(255 204 51 / 70%);
-//   }
-// }
-
 .DevelopmentGauge {
   visibility: visible;
   clip-path: circle(50%);
@@ -174,4 +156,25 @@
 #CandO {
   background-image: url("./assets/CandO-charter.jpg");
   visibility: visible;
+}
+
+.company-panel.highlight {
+content: "";
+  position: absolute;
+  inset: 0;
+  border: 0.8em solid #f88425;
+  box-sizing: border-box;
+  pointer-events: none;
+
+  animation: company-flash 1s ease-in-out infinite;
+}
+
+@keyframes company-flash {
+  0%, 100% {
+    opacity: 0.15;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }

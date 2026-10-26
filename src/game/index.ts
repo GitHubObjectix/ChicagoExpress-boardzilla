@@ -20,7 +20,8 @@ export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpr
 
 export enum GameStates {
   None = 0,
-  SelectAction
+  SelectAction,
+  SelectCompany
 }
 
 export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressPlayer> {
@@ -31,11 +32,17 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   // contains spaces for each railway company in order as defined by RailwayCompanies enum
   railwayCompanies: RailwayCompany[] = [];
 
-  gameState: GameStates = GameStates.None;
+  gameState: GameStates = GameStates.SelectCompany;
 }
 
 export class RailwayCompany extends Space<ChicagoExpressGame> {
   initialBid: number = 0;
+
+  balance: number = 0;
+
+  public hasStocks(): boolean {
+    return this.has(`${this.name}-stock`);
+  }
 }
 
 export class Board extends Space<ChicagoExpressGame> { }
@@ -225,6 +232,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
           game.message(`succeeding bidder is ${succeedingBidder} with a bid of ${price}`);
           succeedingBidder!.balance -= price;
+          company.balance += price;
           const stock = company.first(Space, 'stocks').first(Stock);
           const tableau = succeedingBidder!.my('player-tableau');
           stock!.putInto(tableau!.first(Space, "stocks"));
