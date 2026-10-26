@@ -13,6 +13,7 @@ import {
   RailwayCompany,
   ChicagoExpressPlayer,
   ChicagoExpressGame,
+  Gauge,
   AuctionGauge,
   DevelopmentGauge,
   RouteConstructionGauge,
@@ -28,6 +29,7 @@ import stockImage_BandO from './assets/BandO-stock.jpg';
 import stockImage_NYC from './assets/NYC-stock.jpg';
 import stockImage_CandO from './assets/CandO-stock.jpg';
 import stockImage_Wabash from './assets/Wabash-stock.jpg';
+import gaugePointer from './assets/gauge-pointer.svg';
 import trainImage_PRR from './pieces/PRR-train.svg'
 import trainImage_BandO from './pieces/BandO-train.svg'
 import trainImage_NYC from './pieces/NYC-train.svg'
@@ -161,6 +163,23 @@ render(setup, {
       game.layout(company.id, { area: { left: 80, top: 10 + (index * charterHeight), width: 25, height: charterHeight }});
       game.all(company.id).layout("trains", { area: { left:0, top: 0, width: 45, height: 100 }});
       game.all(company.id).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
+    });
+
+    game.all(Gauge).appearance({
+      render: (gauge) => {
+        return (
+          <div className="gauge-inner">
+            <img
+              className="gauge-pointer"
+              src={gaugePointer}
+              style={{
+                transform: `rotate(${gauge.getAngle()}deg)`,
+              }}
+              alt=""
+            />
+          </div>
+        );
+      }
     });
 
     // define the layout of the trains and stocks pile on each railway company charter

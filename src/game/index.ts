@@ -3,7 +3,7 @@ import {
   Player,
   Space,
   Piece,
-  Game,
+  Game,  
   ConnectedSpaceMap,
 } from '@boardzilla/core';
 
@@ -33,10 +33,43 @@ export class RailwayCompany extends Space<ChicagoExpressGame> {
 
 export class Board extends Space<ChicagoExpressGame> { }
 export class PlayerTableau extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
-export class AuctionGauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
-export class DevelopmentGauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
-export class RouteConstructionGauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
-//export class Map extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
+export class Gauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> {
+  protected currentAction: number = 0;
+
+  getAngle(): number { return (0); }
+  isActionPossible(): boolean { return false; }
+  makeAction() { ++this.currentAction; }
+}
+export class AuctionGauge extends Gauge { 
+  readonly actionAngles: number[] = [-40, 15, 46, 75];
+
+  public override getAngle(): number {
+    return (this.actionAngles[(this.currentAction < this.actionAngles.length) ? this.currentAction : this.actionAngles.length-1]);
+  }
+  public override isActionPossible(): boolean {
+    return this.currentAction < this.actionAngles.length-1;
+  }
+}
+export class DevelopmentGauge extends Gauge {
+  readonly actionAngles: number[] = [-60, -15, 15, 46, 75];
+
+  override getAngle(): number {
+    return (this.actionAngles[(this.currentAction < this.actionAngles.length) ? this.currentAction : this.actionAngles.length-1]);
+  }
+  public override isActionPossible(): boolean {
+    return this.currentAction < this.actionAngles.length-1;
+  }
+}
+export class RouteConstructionGauge extends Gauge {
+  readonly actionAngles: number[] = [-75, -45, -15, 15, 46, 75];
+
+  override getAngle(): number {
+    return (this.actionAngles[(this.currentAction < this.actionAngles.length) ? this.currentAction : this.actionAngles.length-1]);
+  }
+  public override isActionPossible(): boolean {
+    return this.currentAction < this.actionAngles.length-1;
+  }
+}
 export class HexagonalField extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
 
 export class Train extends Piece<ChicagoExpressGame> {}
@@ -82,7 +115,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   industrialTrack.first(Space, 'wheeling-0')!.createMany(1, House, 'house');
   industrialTrack.first(Space, 'pittsburgh-0')!.createMany(1, House, 'house');
 
-  board.create(AuctionGauge, "auction-gauge");
+  const auctionGauge = board.create(AuctionGauge, "auction-gauge");
   board.create(DevelopmentGauge, "development-gauge");
   board.create(RouteConstructionGauge, "route-construction-gauge");
 

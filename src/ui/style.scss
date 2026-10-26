@@ -98,6 +98,24 @@
   );
 }
 
+// .gauge-inner {
+//   position: relative;
+//   overflow: hidden;
+//   border-radius: 50%;
+// }
+
+.gauge-pointer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  transform-origin: 50% 65%;
+  translate: 0% -15%;
+  scale: 70%
+}
+
 #PRR {
   background-image: url("./assets/PRR-charter.jpg");
   visibility: visible;
