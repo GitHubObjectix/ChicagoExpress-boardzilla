@@ -81,11 +81,11 @@ render(setup, {
     game.all(HexagonalField).appearance({
       render: (hexField) => {
         return (
-          <div className={`hexagonal-field-inner ${game.gameState == GameStates.SelectFields ? "highlight" : ""}`}>
+          <div className={`hexagonal-field-inner ${game.gameState == GameStates.SelectFields && game.isFieldSelectable(hexField) ? "highlight" : ""}`}>
           </div>
         )
       }
-    })
+    });
 
     const industrialCityTrackCellWidth = 11;
     const industrialCityTrackCellHeight = 32  ;

@@ -5,6 +5,7 @@ import {
   Piece,
   Game,  
   ConnectedSpaceMap,
+  HexGrid,
 } from '@boardzilla/core';
 
 import {
@@ -33,7 +34,14 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   // contains spaces for each railway company in order as defined by RailwayCompanies enum
   railwayCompanies: RailwayCompany[] = [];
 
-  gameState: GameStates = GameStates.SelectAction;
+  gameState: GameStates = GameStates.None;
+
+  // lists selectable fields when game is in state SelectFields
+  selectableFields: [number, number][] = [];
+
+  isFieldSelectable(hexField: HexagonalField) : boolean {
+    return this.selectableFields.find((element) => hexField.row == element[0] && hexField.column == element[1]) != undefined;
+  }
 }
 
 export class RailwayCompany extends Space<ChicagoExpressGame> {
@@ -85,7 +93,10 @@ export class RouteConstructionGauge extends Gauge {
     return this.currentAction < this.actionAngles.length-1;
   }
 }
-export class HexagonalField extends Space<ChicagoExpressGame, ChicagoExpressPlayer> { }
+export class HexagonalField extends Space<ChicagoExpressGame, ChicagoExpressPlayer> {
+  row: number = 0;
+  column: number = 0;
+}
 
 export class Train extends Piece<ChicagoExpressGame> {}
 export class Stock extends Piece<ChicagoExpressGame> {}
@@ -105,7 +116,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   ChicagoExpressSetup.columnConfiguration.forEach((column, columnIndex) => {
     for(let row = column[0]; row <= column[1]; ++row)
     {
-      const hexField = map.create(HexagonalField, `hex-${row}-${columnIndex}`);
+      const hexField = map.create(HexagonalField, `hex-${row}-${columnIndex}`, { row: row, column: columnIndex });
 
       const trains = hexField.create(Space, 'trains-space')
       trains.createMany(1, Train, 'PRR-train');
