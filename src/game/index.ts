@@ -21,7 +21,8 @@ export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpr
 export enum GameStates {
   None = 0,
   SelectAction,
-  SelectCompany
+  SelectCompany,
+  SelectFields
 }
 
 export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressPlayer> {
@@ -32,7 +33,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   // contains spaces for each railway company in order as defined by RailwayCompanies enum
   railwayCompanies: RailwayCompany[] = [];
 
-  gameState: GameStates = GameStates.SelectCompany;
+  gameState: GameStates = GameStates.SelectAction;
 }
 
 export class RailwayCompany extends Space<ChicagoExpressGame> {

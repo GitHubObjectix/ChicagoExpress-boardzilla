@@ -78,6 +78,15 @@ render(setup, {
     });
     map.configureLayout({ slots });
 
+    game.all(HexagonalField).appearance({
+      render: (hexField) => {
+        return (
+          <div className={`hexagonal-field-inner ${game.gameState == GameStates.SelectFields ? "highlight" : ""}`}>
+          </div>
+        )
+      }
+    })
+
     const industrialCityTrackCellWidth = 11;
     const industrialCityTrackCellHeight = 32  ;
     const industrialCityTrackCellFrameWidth = 1.8;
@@ -186,7 +195,7 @@ render(setup, {
     game.all(Gauge).appearance({
       render: (gauge) => {
         return (
-          <div className={`gauge-inner ${gauge.isActionPossible() && game.gameState == GameStates.SelectAction ? "highlight" : ""}`}>
+          <div className="gauge-header">
             <img
               className="gauge-pointer"
               src={gaugePointer}
@@ -195,6 +204,7 @@ render(setup, {
               }}
               alt=""
             />
+            <div className={`gauge-inner ${gauge.isActionPossible() && game.gameState == GameStates.SelectAction ? "highlight" : ""}`}></div>
           </div>
         );
       }

@@ -17,7 +17,7 @@
   clip-path: circle(50%);
 }
 
-.gauge-inner.highlight::after {
+.gauge-inner.highlight {
   content: "";
   position: absolute;
   inset: 0;
@@ -120,6 +120,34 @@
   );
 }
 
+.hexagonal-field-inner.highlight {
+  position: absolute;
+  inset: 0;
+  border: 0.8em solid #f88425;
+  box-sizing: border-box;
+  border-shape: polygon(
+    25% 0%,
+    75% 0%,
+    100% 50%,
+    75% 100%,
+    25% 100%,
+    0% 50%
+  );
+  pointer-events: none;
+
+  animation: field-flash 1s ease-in-out infinite;
+}
+
+@keyframes field-flash {
+  0%, 100% {
+    opacity: 0.15;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 // .gauge-inner {
 //   position: relative;
 //   overflow: hidden;
@@ -159,7 +187,7 @@
 }
 
 .company-panel.highlight {
-content: "";
+  content: "";
   position: absolute;
   inset: 0;
   border: 0.8em solid #f88425;
