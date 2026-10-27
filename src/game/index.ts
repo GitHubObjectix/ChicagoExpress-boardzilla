@@ -39,6 +39,8 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
 
   // lists selectable fields when game is in state SelectFields
   selectableFields: [number, number][] = [];
+  // lists selectable companies when game is in state SelectCompany
+  selectableCompanies: RailwayCompany[] = [];
 
   selectedActionGauge?: Gauge = undefined;
   selectedCompany?: RailwayCompany = undefined;
@@ -74,8 +76,29 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
     return this.getActionGauges().filter((gauge) => gauge.isActionPossible());
   }
 
+  getSelectableCompaniesForAuction() : RailwayCompany[] {
+    return this.railwayCompanies.filter((company) => company.isSelectableForAuction());
+  }
+
+  getSelectableCompaniesForConstruction(player: ChicagoExpressPlayer) : RailwayCompany[] {
+    var companies: RailwayCompany[] = [];
+    this.railwayCompanies.forEach((company) => {
+      if (player.my('player-tableau')?.first('stocks')?.has(`${company.name}-stock`))
+        companies.push(company);
+    });
+    return companies;
+  }
+
   getSelectableCompanies() : RailwayCompany[] {
-    return this.railwayCompanies.filter((company) => company.isSelectable());
+    return this.selectableCompanies;
+  }
+
+  getSelectableFields(company: RailwayCompany) : [number, number][] {
+    var selectableFields : [number, number][] = [];
+
+    this.game.all(``)
+
+    return selectableFields;
   }
 
   gameEnds(): boolean {
@@ -96,7 +119,7 @@ export class RailwayCompany extends Space<ChicagoExpressGame> {
     return this.has(`${this.name}-stock`);
   }
 
-  public isSelectable(): boolean {
+  public isSelectableForAuction(): boolean {
     // Wabash is selectable only if there is at least 1 train in Chicago
     var isOpened = true;
 
@@ -320,14 +343,31 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                   cases: [
                     {
                       eq: 'auction-gauge', do: [
-                        () => { game.gameState = GameStates.SelectCompany },
+                        () => { game.selectableCompanies = game.getSelectableCompaniesForAuction(); game.gameState = GameStates.SelectCompany },
                         playerActions({ actions: ["selectCompany"] }),
                         () => { game.gameState = GameStates.None },
                         () => { game.firstPlayerOfAuction = game.players.current(); Do.subflow('action-auction', { company: game.selectedCompany }) },
                       ]
                     },
                     { eq: 'development-gauge', do: () => { game.message("development selected") } },
-                    { eq: 'route-construction-gauge', do: () => { game.message("route construction selected") } },
+                    {
+                      eq: 'route-construction-gauge', do: [
+                        () => {
+                          // determine those companies for which the current player own at least one stock
+                          game.selectableCompanies = game.getSelectableCompaniesForConstruction(game.players.current()!);
+
+                          game.gameState = GameStates.SelectCompany;
+                        },
+                        ifElse({
+                          name: 'checkIfCompaniesAreSelectable',
+                          if: ({}) => { return game.selectableCompanies.length > 0 },
+                          do: [
+                            playerActions({ actions: ["selectCompany"] }),
+                            () => { game.selectableFields = game.getSelectableFields(game.selectedCompany!); }
+                          ]
+                        })
+                      ]
+                    },
                   ],
                   default: () => { }
                 }),

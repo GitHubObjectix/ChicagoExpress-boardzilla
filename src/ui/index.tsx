@@ -184,7 +184,7 @@ render(setup, {
               <div className="company-panel__cash">
                 ${trainCompany.balance}
               </div>
-              <div className={`company-panel ${trainCompany.isSelectable() && game.gameState == GameStates.SelectCompany ? "highlight" : ""}`}>
+              <div className={`company-panel ${game.getSelectableCompanies().includes(trainCompany) && game.gameState == GameStates.SelectCompany ? "highlight" : ""}`}>
               </div>
             </div>
           );
