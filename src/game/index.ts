@@ -5,6 +5,7 @@ import {
   Piece,
   Game,  
   ConnectedSpaceMap,
+  Do,
   HexGrid,
 } from '@boardzilla/core';
 
@@ -39,8 +40,32 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   // lists selectable fields when game is in state SelectFields
   selectableFields: [number, number][] = [];
 
+  selectedActionGauge?: Gauge = undefined;
+  selectedCompany?: RailwayCompany = undefined;
+
   isFieldSelectable(hexField: HexagonalField) : boolean {
     return this.selectableFields.find((element) => hexField.row == element[0] && hexField.column == element[1]) != undefined;
+  }
+
+  getActionGauges() : Gauge[] {
+    var gauges = [this.first('auction-gauge') as Gauge, this.first('development-gauge') as Gauge, this.first('route-construction-gauge') as Gauge];
+    return gauges;
+  }
+
+  getSelectableActions() : Gauge[] {
+    return this.getActionGauges().filter((gauge) => gauge.isActionPossible());
+  }
+
+  getSelectableCompanies() : RailwayCompany[] {
+    return this.railwayCompanies.filter((company) => company.isSelectable());
+  }
+
+  gameEnds(): boolean {
+    return false;
+  }
+
+  isDividendPhaseDue() : boolean {
+    return this.getActionGauges().filter((gauge) => gauge.isActionPossible()).length <= 1;
   }
 }
 
@@ -52,6 +77,19 @@ export class RailwayCompany extends Space<ChicagoExpressGame> {
   public hasStocks(): boolean {
     return this.has(`${this.name}-stock`);
   }
+
+  public isSelectable(): boolean {
+    // Wabash is selectable only if there is at least 1 train in Chicago
+    var isOpened = true;
+
+    if (ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id == this.name) {
+      var field = this.game.first('hex-2-0'); // Chicago field
+      if (field != undefined)
+        isOpened = !field.first('trains-space')!.isEmpty();
+    }
+
+    return isOpened && this.hasStocks();
+  }
 }
 
 export class Board extends Space<ChicagoExpressGame> { }
@@ -62,6 +100,7 @@ export class Gauge extends Space<ChicagoExpressGame, ChicagoExpressPlayer> {
   getAngle(): number { return (0); }
   isActionPossible(): boolean { return false; }
   makeAction() { ++this.currentAction; }
+  resetAction() { this.currentAction = 0; }
 }
 export class AuctionGauge extends Gauge { 
   readonly actionAngles: number[] = [-40, 15, 46, 75];
@@ -108,7 +147,7 @@ export class House extends Piece<ChicagoExpressGame> {}
 export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   const { action } = game;
-  const { playerActions, loop, whileLoop, eachPlayer, forEach, ifElse } = game.flowCommands;
+  const { playerActions, loop, whileLoop, eachPlayer, forEach, ifElse, switchCase } = game.flowCommands;
 
   const board = game.create(Board, 'board');
 
@@ -119,13 +158,13 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       const hexField = map.create(HexagonalField, `hex-${row}-${columnIndex}`, { row: row, column: columnIndex });
 
       const trains = hexField.create(Space, 'trains-space')
-      trains.createMany(1, Train, 'PRR-train');
-      trains.createMany(1, Train, 'CandO-train');
-      trains.createMany(1, Train, 'BandO-train');
+      // trains.createMany(1, Train, 'PRR-train');
+      // trains.createMany(1, Train, 'CandO-train');
+      // trains.createMany(1, Train, 'BandO-train');
 
       if (ChicagoExpressSetup.fieldCanBeDeveloped(row, columnIndex)) {
         const house = hexField.create(Space, 'house-space');
-        house.createMany(1, House, 'house');
+        // house.createMany(1, House, 'house');
       }
     }
   })
@@ -145,6 +184,13 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   board.create(DevelopmentGauge, "development-gauge");
   board.create(RouteConstructionGauge, "route-construction-gauge");
 
+  // create tableau spaces for each player
+  for (const player of game.players) {
+    var playerTableau = game.create(PlayerTableau, `player-tableau`, { player });
+    var stocks = playerTableau.create(Space, 'stocks');
+  }
+
+  // create space for Wabash railway company
   const wabashId = ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id
   const wabash = board.create(RailwayCompany, wabashId, {initialBid: 0});
   var trains = wabash.create(Space, 'trains');
@@ -152,13 +198,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   var stocks = wabash.create(Space, 'stocks');
   stocks.createMany(ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].stocks, Stock, `${wabashId}-stock`);
 
-  // create tableau spaces for each player
-  for (const player of game.players) {
-    var playerTableau = game.create(PlayerTableau, `player-tableau`, { player });
-    var stocks = playerTableau.create(Space, 'stocks');
-  }
-
-  // create spaces for Wabash and the other railway companies
+  // create spaces for the other railway companies
   ChicagoExpressSetup.railwayCompanies.slice(1).forEach((company, index) => {
     var thisCompany = game.create(RailwayCompany, company.id,
       {initialBid: company.initialBid});
@@ -195,6 +235,24 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     ).message(
       `{{player}} passed`
     ),
+    selectAction: player => action({
+      prompt: "Select an action gauge",
+      description: "Select an action by clicking on a gauge"
+    }).chooseOnBoard('actionChoice', () => game.getSelectableActions())
+    .do(({actionChoice}) => {
+      game.selectedActionGauge = actionChoice;
+    }).message(
+      `{{player}} selected {{actionChoice}}`
+    ),
+    selectCompany: player => action({
+      prompt: "Select a railway company",
+      description: "Select a railway company by clicking on its panel"
+    }).chooseOnBoard('companyChoice', () => game.getSelectableCompanies())
+    .do(({companyChoice}) => {
+      game.selectedCompany = companyChoice;
+    }).message(
+      `{{player}} selected {{companyChoice}}`
+    )
   });
 
   game.defineFlow(
@@ -207,6 +265,51 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     },
 
     // Initial auction phase
+    //({}) => { Do.subflow('initial-auction')},
+
+    // Main game loop
+    whileLoop({
+      while: () => !game.gameEnds(), do:
+        eachPlayer({
+          name: 'playerAtTurn',
+          do: [
+            () => { game.gameState = GameStates.SelectAction },
+            playerActions({ actions: ["selectAction"] }),
+            () => {
+              game.selectedActionGauge!.makeAction();
+              game.gameState = GameStates.None;
+            },
+            switchCase({
+              name: 'actionSwitch',
+              switch: () => game.selectedActionGauge!.name,
+              cases: [
+                { eq: 'auction-gauge', do: [
+                  () => { game.gameState = GameStates.SelectCompany },
+                  playerActions({ actions: ["selectCompany"] }),
+                  () => { game.gameState = GameStates.None },
+                  () => { Do.subflow('action-auction', { company: game.selectedCompany }) },
+                ]},
+                { eq: 'development-gauge', do: () => { game.message("development selected") } },
+                { eq: 'route-construction-gauge', do: () => { game.message("route construction selected") } },
+              ],
+              default: () => { }
+            }),
+            ifElse({
+              name: 'checkDividendPhase',
+              if: ({}) => game.isDividendPhaseDue(),
+              do: [
+                () => { },
+                ({}) => Do.subflow('dividend-phase'),
+                () => { game.getActionGauges().forEach(element => { element.resetAction() }); }
+              ]
+            })
+          ],
+        })
+    })
+  );
+
+  game.defineSubflow(
+    'initial-auction',
     forEach({
       name: 'company',
       collection: () => game.railwayCompanies.slice(0),
@@ -218,17 +321,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
           game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
         },
         // Execution: let each player bid or pass until only one player is left
-        whileLoop({
-          while: () => game.players.filter(player => !player.passedThisAuction).length > 1, do:
-            eachPlayer({
-              name: 'biddingPlayer',
-              startingPlayer: () => game.firstPlayerOfAuction!,
-              do: ifElse({
-                if: (args) => !args.biddingPlayer.passedThisAuction && ( !args.biddingPlayer.hasPlacedBid || game.players.filter(player => !player.passedThisAuction).length > 1 ),
-                do: playerActions({ actions: ["bid", "pass"] }),
-              }),
-            }),
-        }),
+        ({}) => { Do.subflow('auction')},
         // Collection: determine the winner and deduct the winning bid from their balance
         ({ company }) => {
           var price = 0;
@@ -253,5 +346,54 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
         },
       ],
     }),
+  );
+
+  game.defineSubflow(
+    'action-auction',
+    ({ company }) => {
+      game.firstPlayerOfAuction = game.players.current();
+      game.message(company.name + " is up for auction. Starting bid is " + company.initialBid + " starting player is " + game.firstPlayerOfAuction);
+      game.lastBid = Math.ceil( company.balance / company.balance );
+      game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
+    },
+    // Execution: let each player bid or pass until only one player is left
+    ({ }) => { Do.subflow('auction') },
+    // Collection: determine the winner and deduct the winning bid from their balance
+    ({ company }) => {
+      var succeedingBidderIndex = game.players.findIndex(player => !player.passedThisAuction);
+      if (succeedingBidderIndex !== -1) {
+        var price = game.lastBid;
+        var succeedingBidder = game.players[succeedingBidderIndex];
+
+        game.message(`succeeding bidder is ${succeedingBidder} with a bid of ${price}`);
+
+        succeedingBidder!.balance -= price;
+        company.balance += price;
+        const stock = company.first(Space, 'stocks').first(Stock);
+        const tableau = succeedingBidder!.my('player-tableau');
+        stock!.putInto(tableau!.first(Space, "stocks"));
+      }
+    }
+  )
+
+  game.defineSubflow(
+    'auction',
+    whileLoop({
+      while: () => game.players.filter(player => !player.passedThisAuction).length > 1, do:
+        eachPlayer({
+          name: 'biddingPlayer',
+          startingPlayer: () => game.firstPlayerOfAuction!,
+          do: ifElse({
+            if: (args) => !args.biddingPlayer.passedThisAuction && (!args.biddingPlayer.hasPlacedBid || game.players.filter(player => !player.passedThisAuction).length > 1),
+            do: playerActions({ actions: ["bid", "pass"] }),
+          }),
+        }),
+    }),
+  );
+
+  game.defineSubflow(
+    'dividend-phase',
+
+    () => { game.message("Dividend phase"); }
   );
 });
