@@ -90,6 +90,10 @@ export class RailwayCompany extends Space<ChicagoExpressGame> {
 
     return isOpened && this.hasStocks();
   }
+
+  public countStocksOutstanding() : number {
+    return Math.max(1, this.game.all(`${this.name}-stock`).length - this.game.first(`${this.name}`)!.first('stocks')!.all(`${this.name}-stock`).length);
+  }
 }
 
 export class Board extends Space<ChicagoExpressGame> { }
@@ -235,6 +239,11 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     ).message(
       `{{player}} passed`
     ),
+    skip: () => action({
+      prompt: 'Done'
+    }).do(() => {
+      game.selectedActionGauge = undefined;
+    }),
     selectAction: player => action({
       prompt: "Select an action gauge",
       description: "Select an action by clicking on a gauge"
@@ -265,7 +274,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     },
 
     // Initial auction phase
-    //({}) => { Do.subflow('initial-auction')},
+    ({}) => { Do.subflow('initial-auction')},
 
     // Main game loop
     whileLoop({
@@ -274,25 +283,31 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
           name: 'playerAtTurn',
           do: [
             () => { game.gameState = GameStates.SelectAction },
-            playerActions({ actions: ["selectAction"] }),
-            () => {
-              game.selectedActionGauge!.makeAction();
-              game.gameState = GameStates.None;
-            },
-            switchCase({
-              name: 'actionSwitch',
-              switch: () => game.selectedActionGauge!.name,
-              cases: [
-                { eq: 'auction-gauge', do: [
-                  () => { game.gameState = GameStates.SelectCompany },
-                  playerActions({ actions: ["selectCompany"] }),
-                  () => { game.gameState = GameStates.None },
-                  () => { Do.subflow('action-auction', { company: game.selectedCompany }) },
-                ]},
-                { eq: 'development-gauge', do: () => { game.message("development selected") } },
-                { eq: 'route-construction-gauge', do: () => { game.message("route construction selected") } },
-              ],
-              default: () => { }
+            playerActions({ actions: ["selectAction", "skip"] }),
+            () => ( game.gameState = GameStates.None ),
+            ifElse({
+              name: 'checkIfActionSelected',
+              if: ({}) => { return game.selectedActionGauge != undefined },
+              do: [
+                () => { game.selectedActionGauge!.makeAction(); },
+                switchCase({
+                  name: 'actionSwitch',
+                  switch: () => game.selectedActionGauge!.name,
+                  cases: [
+                    {
+                      eq: 'auction-gauge', do: [
+                        () => { game.gameState = GameStates.SelectCompany },
+                        playerActions({ actions: ["selectCompany"] }),
+                        () => { game.gameState = GameStates.None },
+                        () => { game.firstPlayerOfAuction = game.players.current(); Do.subflow('action-auction', { company: game.selectedCompany }) },
+                      ]
+                    },
+                    { eq: 'development-gauge', do: () => { game.message("development selected") } },
+                    { eq: 'route-construction-gauge', do: () => { game.message("route construction selected") } },
+                  ],
+                  default: () => { }
+                }),
+              ]
             }),
             ifElse({
               name: 'checkDividendPhase',
@@ -351,9 +366,9 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   game.defineSubflow(
     'action-auction',
     ({ company }) => {
-      game.firstPlayerOfAuction = game.players.current();
-      game.message(company.name + " is up for auction. Starting bid is " + company.initialBid + " starting player is " + game.firstPlayerOfAuction);
-      game.lastBid = Math.ceil( company.balance / company.balance );
+      game.lastBid = Math.ceil( company.balance / company.countStocksOutstanding() ) - 1;
+      game.message(company.name + " is up for auction. Starting bid is " + (game.lastBid+1) + " starting player is " + game.firstPlayerOfAuction);
+      game.message(`${company.countStocksOutstanding()} stocks are outstanding`)
       game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
     },
     // Execution: let each player bid or pass until only one player is left
