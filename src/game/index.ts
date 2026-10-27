@@ -52,6 +52,24 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
     return gauges;
   }
 
+  getStartField(companyId: string) : HexagonalField {
+    var startField = undefined;
+    switch (companyId)
+    {
+      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id:
+        startField = this.game.first('hex-3-3')! as HexagonalField; break;
+      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.PRR].id:
+        startField = this.game.first('hex-5-17') as HexagonalField; break;
+      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.BandO].id:
+        startField = this.game.first('hex-7-16') as HexagonalField; break;
+      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.NYC].id:
+        startField = this.game.first('hex-3-18') as HexagonalField; break;
+      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.CandO].id:
+        startField = this.game.first('hex-9-16') as HexagonalField; break;
+    }
+    return startField!;
+  }
+
   getSelectableActions() : Gauge[] {
     return this.getActionGauges().filter((gauge) => gauge.isActionPossible());
   }
@@ -201,6 +219,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   trains.createMany(ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].trains, Train, `${wabashId}-train`);
   var stocks = wabash.create(Space, 'stocks');
   stocks.createMany(ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].stocks, Stock, `${wabashId}-stock`);
+  game.railwayCompanies.push(wabash);
 
   // create spaces for the other railway companies
   ChicagoExpressSetup.railwayCompanies.slice(1).forEach((company, index) => {
@@ -271,6 +290,11 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       game.players.forEach(player => { player.balance = 120 / game.players.length; })
       // TODO! select the players who starts the game
       game.firstPlayerOfAuction = game.players[0];
+
+      game.railwayCompanies.slice(1).forEach((company) => {
+        const train = company.first('trains')!.first(`${company.name}-train`)! as Train;
+        train.putInto(game.getStartField(company.name));
+      });
     },
 
     // Initial auction phase
@@ -327,7 +351,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     'initial-auction',
     forEach({
       name: 'company',
-      collection: () => game.railwayCompanies.slice(0),
+      collection: () => game.railwayCompanies.slice(1),
       do: [
         // Preparation: initialize minimum start bid (one less as described in the rules as minimum bid is increased by 1 on each bid)
         ({ company }) => {
