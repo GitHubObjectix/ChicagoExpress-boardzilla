@@ -16,9 +16,13 @@ import {
 } from './game-setup.js'
 
 export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpressPlayer> {
-  balance: number = 0;
+  //balance: number = 0;
   passedThisAuction: boolean = false;
   hasPlacedBid: boolean = false;
+
+  getBalance() : number {
+    return this.my(PlayerTableau)!.first('account')!.all('banknote').length;
+  }
 }
 
 export enum GameStates {
@@ -128,8 +132,14 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
     }
     console.log(`${company} can put train on ${hexField}: ${canPutTrainOnField}`);
 
-    // check if company can afford to put the train
-    // TODO! implement
+    if (canPutTrainOnField) {
+      // check if company can afford to put the train
+      const presentTrains = 1 + hexField.all(Piece, (piece) => piece.name.endsWith('-train')).length;
+      const constructionCost = presentTrains * -ChicagoExpressSetup.getCostAndIncomeConfiguration(hexField.row, hexField.column)[CostAndIncome.ConstructionCost];
+
+      console.log(`on field ${hexField} are ${presentTrains-1} trains present which results in construction cost of ${constructionCost}`);
+      canPutTrainOnField = company.getBalance() >= constructionCost;
+    }
 
     return canPutTrainOnField;
   }
@@ -192,12 +202,25 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   isDividendPhaseDue() : boolean {
     return this.getActionGauges().filter((gauge) => gauge.isActionPossible()).length <= 1;
   }
+
+  transferMoney(amount: number, fromSpace: Space<ChicagoExpressGame, ChicagoExpressPlayer>, toSpace: Space<ChicagoExpressGame, ChicagoExpressPlayer>) {
+    for (let n = 0; n < amount; ++n) {
+      const banknote = fromSpace.first('account')!.first('banknote')! as Banknote;
+      banknote.putInto(toSpace.first('account')!);
+    }
+  }
+
+  transferStocks(amount: number, fromSpace: Space<ChicagoExpressGame, ChicagoExpressPlayer>, toSpace: Space<ChicagoExpressGame, ChicagoExpressPlayer>) {
+    for (let n = 0; n < amount; ++n) {
+      const stock = fromSpace.first('stocks')!.first(Piece, (piece) => piece.name.endsWith('-stock'))! as Stock;
+      stock.putInto(toSpace.first('stocks')!);
+    }
+  }
 }
 
 export class RailwayCompany extends Space<ChicagoExpressGame> {
   initialBid: number = 0;
 
-  balance: number = 0;
   income: number = 0;
 
   public hasStocks(): boolean {
@@ -219,6 +242,10 @@ export class RailwayCompany extends Space<ChicagoExpressGame> {
 
   public countStocksOutstanding() : number {
     return Math.max(1, this.game.all(`${this.name}-stock`).length - this.game.first(`${this.name}`)!.first('stocks')!.all(`${this.name}-stock`).length);
+  }
+
+  getBalance() : number {
+    return this.first('account')!.all('banknote').length;
   }
 }
 
@@ -266,10 +293,14 @@ export class HexagonalField extends Space<ChicagoExpressGame, ChicagoExpressPlay
   row: number = 0;
   column: number = 0;
 }
+export class Bank extends Space<ChicagoExpressGame, ChicagoExpressPlayer> {
+
+}
 
 export class Train extends Piece<ChicagoExpressGame> {}
 export class Stock extends Piece<ChicagoExpressGame> {}
 export class House extends Piece<ChicagoExpressGame> {}
+export class Banknote extends Piece<ChicagoExpressGame> {}
 
 /**
  * Main game definitions.
@@ -278,6 +309,10 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   const { action } = game;
   const { playerActions, forLoop, whileLoop, eachPlayer, forEach, ifElse, switchCase } = game.flowCommands;
+
+  const bank = game.create(Bank, 'bank');
+  const account = bank.create(Space, 'account');
+  account.createMany(1593, Banknote, 'banknote');
 
   const board = game.create(Board, 'board');
 
@@ -317,12 +352,14 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   // create tableau spaces for each player
   for (const player of game.players) {
     var playerTableau = game.create(PlayerTableau, `player-tableau`, { player });
-    var stocks = playerTableau.create(Space, 'stocks');
+    playerTableau.create(Space, 'account');
+    playerTableau.create(Space, 'stocks');
   }
 
   // create space for Wabash railway company
   const wabashId = ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id
   const wabash = board.create(RailwayCompany, wabashId, {initialBid: 0, income: 0});
+  wabash.create(Space, 'account');
   var trains = wabash.create(Space, 'trains');
   trains.createMany(ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].trains, Train, `${wabashId}-train`);
   var stocks = wabash.create(Space, 'stocks');
@@ -334,6 +371,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     var thisCompany = game.create(RailwayCompany, company.id,
       {initialBid: company.initialBid, income: company.initialIncome});
 
+    thisCompany.create(Space, 'account');
     var trains = thisCompany.create(Space, 'trains');
     trains.createMany(company.trains, Train, `${company.id}-train`);
     var stocks = thisCompany.create(Space, 'stocks');
@@ -350,7 +388,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     }).chooseNumber(
       "amount", {
         min: game.lastBid + 1,
-        max: player.balance,
+        max: player.getBalance(),
       }
     ).do(
       ({ amount }) => { game.lastBid = amount, player.hasPlacedBid = true }
@@ -405,7 +443,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     // Initial set up of start values (balances, etc)
     () => {
       // start balance is 120$ and is divided equally among all players
-      game.players.forEach(player => { player.balance = 120 / game.players.length; })
+      game.players.forEach(player => { game.transferMoney(120 / game.players.length, bank, player.my(PlayerTableau)!) })
       // TODO! select the players who starts the game
       game.firstPlayerOfAuction = game.players[0];
 
@@ -450,7 +488,6 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                         () => {
                           // determine those companies for which the current player own at least one stock
                           game.selectableCompanies = game.getSelectableCompaniesForConstruction(game.players.current()!);
-
                           game.gameState = GameStates.SelectCompany;
                         },
                         ifElse({
@@ -477,8 +514,10 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                         () => {
                                           const train = game.selectedCompany!.first(Space, 'trains')!.first(Train);
                                           train!.putInto(game.selectedField!);
-                                          game.selectedCompany!.balance +=
-                                            game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).length * ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.ConstructionCost];
+                                          game.transferMoney(
+                                            -game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).length * ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.ConstructionCost],
+                                            game.selectedCompany!,
+                                            bank);
                                           game.selectedCompany!.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.Income];
                                           if (game.selectedField!.has(Piece, 'house'))
                                             game.selectedCompany!.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped];
@@ -543,11 +582,8 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
           }
 
           game.message(`succeeding bidder is ${succeedingBidder} with a bid of ${price}`);
-          succeedingBidder!.balance -= price;
-          company.balance += price;
-          const stock = company.first(Space, 'stocks').first(Stock);
-          const tableau = succeedingBidder!.my('player-tableau');
-          stock!.putInto(tableau!.first(Space, "stocks"));
+          game.transferMoney(price, succeedingBidder!.my(PlayerTableau)!, company);
+          game.transferStocks(1, company, succeedingBidder!.my(PlayerTableau)!);
 
           game.firstPlayerOfAuction = succeedingBidder;
         },
@@ -558,7 +594,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   game.defineSubflow(
     'action-auction',
     ({ company }) => {
-      game.lastBid = Math.ceil( company.balance / company.countStocksOutstanding() ) - 1;
+      game.lastBid = Math.ceil( company.getBalance() / company.countStocksOutstanding() ) - 1;
       game.message(company.name + " is up for auction. Starting bid is " + (game.lastBid+1) + " starting player is " + game.firstPlayerOfAuction);
       game.message(`${company.countStocksOutstanding()} stocks are outstanding`)
       game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
@@ -574,11 +610,8 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
         game.message(`succeeding bidder is ${succeedingBidder} with a bid of ${price}`);
 
-        succeedingBidder!.balance -= price;
-        company.balance += price;
-        const stock = company.first(Space, 'stocks').first(Stock);
-        const tableau = succeedingBidder!.my('player-tableau');
-        stock!.putInto(tableau!.first(Space, "stocks"));
+        game.transferMoney(price, succeedingBidder!.my(PlayerTableau)!, company);
+        game.transferStocks(1, company, succeedingBidder!.my(PlayerTableau)!);
       }
     }
   )

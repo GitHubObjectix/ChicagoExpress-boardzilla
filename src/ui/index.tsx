@@ -9,6 +9,7 @@ import {
   Train,
   Stock,
   House,
+  Banknote,
   PlayerTableau,
   RailwayCompany,
   ChicagoExpressPlayer,
@@ -18,6 +19,7 @@ import {
   DevelopmentGauge,
   RouteConstructionGauge,
   HexagonalField,
+  Bank,
   GameStates
 } from '../game/index.js';
 
@@ -37,6 +39,7 @@ import trainImage_NYC from './pieces/NYC-train.svg'
 import trainImage_CandO from './pieces/CandO-train.svg'
 import trainImage_Wabash from './pieces/Wabash-train.svg'
 import image_House from './pieces/house.svg'
+import image_Banknote from './pieces/dollar-note.jpg'
 
 render(setup, {
   boardSizes: [
@@ -52,6 +55,27 @@ render(setup, {
   layout: (game, player, boardSize) => {
     game.disableDefaultAppearance();
     //game.showLayoutBoundingBoxes();
+
+    const bank = game.first(Bank, 'bank')!;
+    game.layout(bank.name, { area: { left: 80, top: 0, width: 20, height: 20 } });
+    bank.layout('account', { area: { left: 5, top: 30, width: 90, height: 60 } });
+    bank.appearance({
+      render: (bank) => {
+        return(
+          <div className="bank-panel">
+            <div className="bank-panel__header">
+              <div className="player-bank__name">
+                Bank
+              </div>
+              <div className="bank-panel__cash">
+                ${bank.all('banknote').length}
+              </div>
+            </div>
+          </div>
+        );
+      }
+    });
+    bank.layout(Banknote, { rows: { min: 1, max: 2 }, columns: 1, });
 
     game.all(Board).layout('house-pile', { area: { left: 21.5, top: 68.2, width: 18.7, height: 11.17 }});
     game.all('house-pile').layout(House, { offsetRow: {x: -50, y: 100}, offsetColumn: 100, haphazardly: 2, });
@@ -112,6 +136,7 @@ render(setup, {
     const wabashId = ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id;
     game.all(Board).layout(wabashId, { area: { left: 62.1, top: 71.4, width: 29.76, height: 19.97, } });
     game.all(wabashId).layout("trains", { area: { left:0, top: 0, width: 45, height: 100 }});
+    game.all(wabashId).layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
     game.all(wabashId).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
 
     game.all('Wabash-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_Wabash}/> ) });
@@ -125,6 +150,7 @@ render(setup, {
     game.all('NYC-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_NYC}/> ) });
     game.all('CandO-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_CandO}/> ) });
     game.all('house').appearance({ aspectRatio: 1, render: () => ( <img src={image_House}/> ) });
+    game.all(Banknote).appearance({ aspectRatio: 1, render: () => ( <img src={image_Banknote}/> ) });
 
     game.all(PlayerTableau).appearance({
       render: (tableau) => {
@@ -137,7 +163,7 @@ render(setup, {
                 {player.name}
               </div>
               <div className="player-panel__cash">
-                ${player.balance}
+                ${tableau.first('account')?.all('banknote').length}
               </div>
             </div>
           </div>
@@ -163,15 +189,17 @@ render(setup, {
           height: panelHeight,
         },
       });
-      game.all(tableau).layout("stocks", {area: { left: 1, top: 30, width: 98, height: 65 }});
+      tableau.layout("account", { area: { left: 1, top: 30, width: 98, height: 30 } }); 
+      tableau.layout("stocks", { area: { left: 1, top: 60, width: 98, height: 30 } });
     });
 
     // position the railway company charters
     const charterHeight = 20;
     const charterGap = 10;
     ChicagoExpressSetup.railwayCompanies.slice(1).forEach((company, index) => {
-      game.layout(company.id, { area: { left: 80, top: 10 + (index * charterHeight), width: 25, height: charterHeight }});
+      game.layout(company.id, { area: { left: 80, top: 20 + (index * charterHeight), width: 25, height: charterHeight }});
       game.all(company.id).layout("trains", { area: { left:0, top: 0, width: 45, height: 100 }});
+      game.all(company.id).layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
       game.all(company.id).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
     });
 
@@ -182,7 +210,7 @@ render(setup, {
           return (
             <div className="company-panel__header">
               <div className="company-panel__cash">
-                ${trainCompany.balance}
+                ${trainCompany.getBalance()}
               </div>
               <div className={`company-panel ${game.getSelectableCompanies().includes(trainCompany) && game.gameState == GameStates.SelectCompany ? "highlight" : ""}`}>
               </div>

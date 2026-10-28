@@ -66,6 +66,25 @@
   font-size: 0.9em;
 }
 
+.bank {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0.65em;
+  border: 0.12em solid #8b7656;
+  border-radius: 0.5em;
+  background: #f5eedf;
+  color: #28251f;
+  font-family: sans-serif;
+  font-size: 0.9em;
+  visibility: visible;
+}
+
+.deposit {
+  visibility: visible;
+}
+
+
 .player-panel__header {
   display: flex;
   align-items: center;
