@@ -6,21 +6,28 @@ export enum RailwayCompanies {
   CandO,
 }
 
+export enum CostAndIncome {
+  ConstructionCost = 0,
+  Income,
+  IncomeIfDeveloped
+}
+
 class RC {
   id: string = "";
   name: string = "";
   trains: number = 0;
   stocks: number = 0;
   initialBid: number = 0;
+  initialIncome: number = 0;
 }
 
 export class ChicagoExpressSetup {
   static readonly railwayCompanies: RC[] = [
-    {id: "Wabash", name: "Wabash Railroad Company", trains: 11, stocks: 2, initialBid: 0},
-    {id: "PRR", name: "The Pennsylvania Railroad Company", trains: 20, stocks: 3, initialBid: 7},
-    {id: "BandO", name: "Baltimore & Ohio", trains: 22, stocks: 4, initialBid: 6},
-    {id: "NYC", name: "New York Central", trains: 24, stocks: 5, initialBid: 5},
-    {id: "CandO", name: "Chesapeake & Ohio", trains: 26, stocks: 6, initialBid: 8},
+    {id: "Wabash", name: "Wabash Railroad Company", trains: 11, stocks: 2, initialBid: 0, initialIncome: 1},
+    {id: "PRR", name: "The Pennsylvania Railroad Company", trains: 20, stocks: 3, initialBid: 7, initialIncome: 7},
+    {id: "BandO", name: "Baltimore & Ohio", trains: 22, stocks: 4, initialBid: 6, initialIncome: 6},
+    {id: "NYC", name: "New York Central", trains: 24, stocks: 5, initialBid: 5, initialIncome: 8},
+    {id: "CandO", name: "Chesapeake & Ohio", trains: 26, stocks: 6, initialBid: 8, initialIncome: 5},
   ]
   static readonly houses: number = 20;
 
@@ -45,6 +52,36 @@ export class ChicagoExpressSetup {
     [0, 6],
     [0, 5]
   ]
+
+  // configures cost and incomes per field in each row, list only existing fields as per columnConfiguration
+  // 1st number => cost
+  // 2nd number => train income
+  // 3rd number => development income
+  static readonly columnCostAndIncomeConfiguration: [number, number, number][][] = [
+    [[-3, 7, 0], [-1, 0, 0], [-1, 0, 0]], // column 0
+    [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 2, 2], [-1, 0, 0]],
+    [[-1, 0, 0], [-1, 0, 0], [-2, 1, 2], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0]],
+    [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 1, 2], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-2, 2, 2]],
+    [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0]],
+    [[-2, 1, 1], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 1, 1], [-1, 0, 0], [-1, 0, 0], [-2, 2, 1]],
+    [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-2, 0, 0], [-3, 1, 2]],
+    [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-2, 0, 0], [-2, 0, 0], [-3, 1, 2]], // column 7
+    [[-1, 2, 2], [-1, 0, 0], [-2, 1, 1], [-2, 0, 0], [-3, 0, 0], [-2, 0, 0], [-4, 1, 2], [-3, 2, 1], [-3, 1, 2]],
+    [[-1, 0, 0], [-1, 0, 0], [-2, 0, 0], [-2, 0, 0], [-2, 0, 0], [-3, 1, 2], [-4, 1, 2], [-4, 1, 2], [-3, 1, 2]],
+    [[-1, 0, 0], [-2, 0, 0], [-4, 0, 0], [-4, 0, 0], [-4, 0, 0], [-4, 1, 2], [-2, 1, 2], [-4, 1, 2], [-2, 0, 0], [-2, 1, 1]],
+    [[-2, 3, 2], [-1, 0, 0], [-2, 0, 0], [-3, 0, 0], [-3, 1, 2], [-4, 1, 2], [-2, 1, 2], [-3, 0, 0], [-2, 0, 0], [-1, 0, 0]],
+    [[-1, 0, 0], [-2, 0, 0], [-2, 0, 0], [-3, 0, 0], [-2, 1, 1], [-4, 1, 2], [-2, 1, 2], [-2, 0, 0], [-2, 0, 0], [-2, 0, 0], [-1, 1, 1]],
+    [[-1, 0, 0], [-2, 0, 0], [-3, 0, 0], [-2, 0, 0], [-3, 1, 2], [-4, 0, 0], [-2, 1, 1], [-1, 0, 0], [-2, 0, 0], [-2, 0, 0], [-1, 0, 0]],
+    [[-2, 1, 2], [-2, 0, 0], [-3, 0, 0], [-3, 0, 0], [-2, 1, 1], [-2, 0, 0], [-2, 0, 0], [-1, 0, 0], [-2, 0, 0], [-2, 0, 0], [-2, 2, 1]],
+    [[-1, 0, 0], [-2, 0, 0], [-2, 0, 0], [-2, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0]],
+    [[-2, 1, 1], [-2, 0, 0], [-2, 0, 0], [-2, 1, 1], [-2, 0, 0], [-1, 0, 0], [-1, 0, 0], [0, 0, 0], [-1, 0, 0], [0, 0, 0]],
+    [[-1, 0, 0], [-2, 0, 0], [-2, 0, 0], [-2, 0, 0], [-1, 0, 0], [0, 0, 0], [-1, 0, 0]],
+    [[-2, 1, 2], [-1, 0, 0], [-1, 0, 0], [0, 0, 0], [-1, 0, 0], [-1, 0, 0],], // column 18
+  ]
+
+  public static getCostAndIncomeConfiguration(rowIndex: number, columnIndex: number) {
+    return this.columnCostAndIncomeConfiguration[columnIndex][rowIndex - this.columnConfiguration[columnIndex][0]];
+  }
 
   static readonly forests: [number, number][] = [
     [8, 6],
@@ -100,5 +137,13 @@ export class ChicagoExpressSetup {
       ChicagoExpressSetup.fieldIsCity(rowIndex, columnIndex) ||
       ChicagoExpressSetup.fieldIsMountain(rowIndex, columnIndex)
     );
+  }
+
+  public static fieldExists(rowIndex: number, columnIndex: number) {
+    var fieldExists = false;
+    if (columnIndex >= 0 && columnIndex < this.columnConfiguration.length) {
+      fieldExists = rowIndex >= this.columnConfiguration[columnIndex][0] && rowIndex <= this.columnConfiguration[columnIndex][1]
+    }
+    return fieldExists;
   }
 }

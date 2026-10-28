@@ -11,6 +11,7 @@ import {
 
 import {
   ChicagoExpressSetup,
+  CostAndIncome,
   RailwayCompanies
 } from './game-setup.js'
 
@@ -38,15 +39,16 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   gameState: GameStates = GameStates.None;
 
   // lists selectable fields when game is in state SelectFields
-  selectableFields: [number, number][] = [];
+  selectableFields: HexagonalField[] = [];
   // lists selectable companies when game is in state SelectCompany
   selectableCompanies: RailwayCompany[] = [];
 
   selectedActionGauge?: Gauge = undefined;
   selectedCompany?: RailwayCompany = undefined;
+  selectedField?: HexagonalField = undefined;
 
   isFieldSelectable(hexField: HexagonalField) : boolean {
-    return this.selectableFields.find((element) => hexField.row == element[0] && hexField.column == element[1]) != undefined;
+    return this.selectableFields.find((element) => hexField.row == element.row && hexField.column == element.column) != undefined;
   }
 
   getActionGauges() : Gauge[] {
@@ -93,12 +95,94 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
     return this.selectableCompanies;
   }
 
-  getSelectableFields(company: RailwayCompany) : [number, number][] {
-    var selectableFields : [number, number][] = [];
+  getFieldsOccupiedByCompany(company: RailwayCompany) : HexagonalField[] {
+   var fieldsOccupiedByCompany : HexagonalField[] = [];
 
-    this.game.all(``)
+    this.game.all(Piece, `${company.name}-train`).forEach((train) => {
+      const container = train.container();
+      if (container != undefined && container.name.startsWith('hex-')) {
+        const hexField = container as HexagonalField;
+        fieldsOccupiedByCompany.push(hexField);
+      }
+    });
+
+    console.log(`fields occupied by ${company} are ${fieldsOccupiedByCompany}`);
+
+    return fieldsOccupiedByCompany;
+  }
+
+  canPutTrainOnField(company: RailwayCompany, hexField: HexagonalField) : boolean {
+    var canPutTrainOnField = false;
+
+    // check if fields has space for the train to put
+    if (!hexField.has(`${company.name}-train`)) {
+      // hex field does not contain any train of respective company
+
+      if (ChicagoExpressSetup.mountains.includes([hexField.row, hexField.column]) || ChicagoExpressSetup.forests.includes([hexField.row, hexField.column])) {
+        // if hex field is mountain or forest there must be no other train
+        canPutTrainOnField = hexField.all(Piece, (piece) => piece.name.endsWith('-train')).length == 0;
+      }
+      else {
+        canPutTrainOnField = true;
+      }
+    }
+    console.log(`${company} can put train on ${hexField}: ${canPutTrainOnField}`);
+
+    // check if company can afford to put the train
+    // TODO! implement
+
+    return canPutTrainOnField;
+  }
+
+  getAdjacentFields(field: [number, number]) : [number, number][] {
+    var adjacentFields : [number, number][] = [];
+    if (field[1] % 2 == 0) {
+      // field is in even column
+      adjacentFields.push(
+        [field[0]-1, field[1]],
+        [field[0]-1, field[1]+1],
+        [field[0], field[1]+1],
+        [field[0]+1, field[1]],
+        [field[0], field[1]-1],
+        [field[0]-1, field[1]-1]
+      );
+    }
+    else {
+      // field is in odd colum
+      adjacentFields.push(
+        [field[0]-1, field[1]],
+        [field[0], field[1]+1],
+        [field[0]+1, field[1]+1],
+        [field[0]+1, field[1]],
+        [field[0]+1, field[1]-1],
+        [field[0], field[1]-1]
+      );
+    }
+    adjacentFields = adjacentFields.filter((field) => ChicagoExpressSetup.fieldExists(field[0], field[1]));
+    console.log(`adjacent fields of ${field} are ${adjacentFields}`);
+    return adjacentFields;
+  }
+
+  getSelectableFieldsForCompany(company: RailwayCompany) : HexagonalField[] {
+    var selectableFields : HexagonalField[] = [];
+
+    this.getFieldsOccupiedByCompany(company).forEach((field) => {
+      selectableFields = selectableFields.concat(this.getAdjacentFields([field.row, field.column]).map((field) => this.game.first(`hex-${field[0]}-${field[1]}`) as HexagonalField ));
+    });
+    console.log(`selectable fields for ${company} are ${selectableFields}`);
+
+    selectableFields = [
+      ...new Map(
+        selectableFields.map((hexField) => [`${hexField.row},${hexField.column}`, hexField as HexagonalField])
+      ).values(),
+    ].filter((field) => this.canPutTrainOnField(company, field));
+    console.log(`selectable fields for ${company} are ${selectableFields}`);
 
     return selectableFields;
+  }
+
+  getSelectableFields() : HexagonalField[] {
+    return this.selectableFields;
   }
 
   gameEnds(): boolean {
@@ -114,6 +198,7 @@ export class RailwayCompany extends Space<ChicagoExpressGame> {
   initialBid: number = 0;
 
   balance: number = 0;
+  income: number = 0;
 
   public hasStocks(): boolean {
     return this.has(`${this.name}-stock`);
@@ -192,7 +277,7 @@ export class House extends Piece<ChicagoExpressGame> {}
 export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   const { action } = game;
-  const { playerActions, loop, whileLoop, eachPlayer, forEach, ifElse, switchCase } = game.flowCommands;
+  const { playerActions, forLoop, whileLoop, eachPlayer, forEach, ifElse, switchCase } = game.flowCommands;
 
   const board = game.create(Board, 'board');
 
@@ -237,7 +322,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   // create space for Wabash railway company
   const wabashId = ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id
-  const wabash = board.create(RailwayCompany, wabashId, {initialBid: 0});
+  const wabash = board.create(RailwayCompany, wabashId, {initialBid: 0, income: 0});
   var trains = wabash.create(Space, 'trains');
   trains.createMany(ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].trains, Train, `${wabashId}-train`);
   var stocks = wabash.create(Space, 'stocks');
@@ -247,7 +332,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   // create spaces for the other railway companies
   ChicagoExpressSetup.railwayCompanies.slice(1).forEach((company, index) => {
     var thisCompany = game.create(RailwayCompany, company.id,
-      {initialBid: company.initialBid});
+      {initialBid: company.initialBid, income: company.initialIncome});
 
     var trains = thisCompany.create(Space, 'trains');
     trains.createMany(company.trains, Train, `${company.id}-train`);
@@ -285,6 +370,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       prompt: 'Done'
     }).do(() => {
       game.selectedActionGauge = undefined;
+      game.selectedField = undefined;
     }),
     selectAction: player => action({
       prompt: "Select an action gauge",
@@ -303,7 +389,16 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       game.selectedCompany = companyChoice;
     }).message(
       `{{player}} selected {{companyChoice}}`
-    )
+    ),
+    selectField: player => action({
+      prompt: "Select a field",
+      description: "Select a field by clicking on the map"
+    }).chooseOnBoard('fieldChoice', () => game.getSelectableFields())
+    .do(({fieldChoice}) => {
+      game.selectedField = fieldChoice;
+    }).message(
+      `{{player}} selected {{fieldChoice}}`
+    ),
   });
 
   game.defineFlow(
@@ -363,7 +458,40 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                           if: ({}) => { return game.selectableCompanies.length > 0 },
                           do: [
                             playerActions({ actions: ["selectCompany"] }),
-                            () => { game.selectableFields = game.getSelectableFields(game.selectedCompany!); }
+                            forLoop({
+                              name: 'contruction-loop',
+                              initial: 0,
+                              next: x => x + 1,
+                              while: x => x < 3,
+                              do: [
+                                () => { game.selectableFields = game.getSelectableFieldsForCompany(game.selectedCompany!); game.gameState = GameStates.SelectFields; },
+                                ifElse({
+                                  name: 'checkIfFieldsAreSelectable',
+                                  if: ({}) => { return game.selectableFields.length > 0 },
+                                  do: [
+                                    playerActions({ actions: ["selectField", "skip"] }),
+                                    ifElse({
+                                      name: 'checkIfFieldSelected',
+                                      if: ({}) => { return game.selectedField != undefined },
+                                      do: [
+                                        () => {
+                                          const train = game.selectedCompany!.first(Space, 'trains')!.first(Train);
+                                          train!.putInto(game.selectedField!);
+                                          game.selectedCompany!.balance +=
+                                            game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).length * ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.ConstructionCost];
+                                          game.selectedCompany!.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.Income];
+                                          if (game.selectedField!.has(Piece, 'house'))
+                                            game.selectedCompany!.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped];
+                                        }
+                                      ],
+                                      else: Do.break
+                                    })
+                                  ],
+                                  else: Do.break
+                                })
+                              ]
+                            }),
+                            () => { game.gameState = GameStates.None; }
                           ]
                         })
                       ]
