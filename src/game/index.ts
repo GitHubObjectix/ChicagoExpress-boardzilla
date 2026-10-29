@@ -20,6 +20,7 @@ export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpr
   //balance: number = 0;
   passedThisAuction: boolean = false;
   hasPlacedBid: boolean = false;
+  dividendAmount: number = 0;
 
   getBalance() : number {
     return this.my(PlayerTableau)!.first('account')!.all('banknote').length;
@@ -242,7 +243,20 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   }
 
   gameEnds(): boolean {
-    return false;
+    var numCompaniesWithNoTrains: number = 0;
+    var numCompaniesWithNoStocks: number = 0;
+    this.game.railwayCompanies.forEach((company) => {
+      if (!company.has(`${company.name}-train`)) ++numCompaniesWithNoTrains;
+      if (!company.has(`${company.name}-stock`)) ++numCompaniesWithNoStocks;
+    })
+
+    var lessEqualThreeHouses = this.game.first('house-pile')!.all('house').length <= 3;
+
+    const lastDetroitCell = this.game.first(`${ChicagoExpressSetup.industrialCityNames[IndustrialCities.Detroit]}-${ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit][ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit].length-1]}`);
+
+    console.log(`checking end condition, ${numCompaniesWithNoStocks} companies without stock, ${numCompaniesWithNoTrains} companies without trains, ${lessEqualThreeHouses}, ${lastDetroitCell?.has('house')}`);
+
+    return (numCompaniesWithNoStocks >=3 || numCompaniesWithNoTrains >= 3 || lessEqualThreeHouses || lastDetroitCell!.has('house'));
   }
 
   isDividendPhaseDue() : boolean {
@@ -367,15 +381,9 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     for(let row = column[0]; row <= column[1]; ++row)
     {
       const hexField = map.create(HexagonalField, `hex-${row}-${columnIndex}`, { row: row, column: columnIndex });
-
       const trains = hexField.create(Space, 'trains-space')
-      // trains.createMany(1, Train, 'PRR-train');
-      // trains.createMany(1, Train, 'CandO-train');
-      // trains.createMany(1, Train, 'BandO-train');
-
       if (ChicagoExpressSetup.fieldCanBeDeveloped(row, columnIndex)) {
         const house = hexField.create(Space, 'house-space');
-        // house.createMany(1, House, 'house');
       }
     }
   })
@@ -483,6 +491,12 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     }).message(
       `{{player}} selected {{fieldChoice}}`
     ),
+    confirmDividend: player => action({
+      prompt: "Confirm dividend payment"
+    })
+    .do (() => {
+
+    }),
   });
 
   game.defineFlow(
@@ -504,7 +518,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
     // Main game loop
     whileLoop({
-      while: () => !game.gameEnds(), do:
+      while: () => true, do:
         eachPlayer({
           name: 'playerAtTurn',
           do: [
@@ -591,7 +605,8 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                               else: Do.break
                             })
                           ]
-                        })
+                        }),
+                        () => { game.gameState = GameStates.None; }
                       ]
                     },
                     {
@@ -655,11 +670,46 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
               name: 'checkDividendPhase',
               if: ({}) => game.isDividendPhaseDue(),
               do: [
-                () => { },
                 ({}) => Do.subflow('dividend-phase'),
-                () => { game.getActionGauges().forEach(element => { element.resetAction() }); }
+                () => {
+                  // reset the gauges
+                  game.getActionGauges().forEach(element => { element.resetAction() });
+
+                  // move foward in detroit track
+                  const cells = game.first('industrial-city-track')?.all(Space, (space) => space.name.startsWith(`${ChicagoExpressSetup.industrialCityNames[IndustrialCities.Detroit]}-`));
+                  for (const [index, cell] of cells!.entries()) {
+                    const house = cell.first('house') as House;
+                    if (house != undefined) {
+                      const targetCell = game.first(
+                        `${ChicagoExpressSetup.industrialCityNames[IndustrialCities.Detroit]}-${ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit][index + 1]}`
+                      );
+                      house.putInto(targetCell!);
+
+                      // income of all affected railway company increases
+                      const detroitField = game.first(HexagonalField, `hex-${ChicagoExpressSetup.Detroit[0]}-${ChicagoExpressSetup.Detroit[1]}`)!;
+                      const train = detroitField.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
+                        const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
+                        company.income += ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit][index + 1] - ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit][index];
+                      });
+                      break;
+                    }
+                  }
+                }
               ]
-            })
+            }),
+            () => {
+              if (game.gameEnds()) {
+                const highestBalance = Math.max(
+                  ...game.players.map(player => player.getBalance())
+                );
+
+                const winners = game.players.filter(
+                  player => player.getBalance() === highestBalance
+                );
+
+                game.finish(...winners, "victory");
+              }
+            }
           ],
         })
     })
@@ -673,7 +723,6 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       do: [
         // Preparation: initialize minimum start bid (one less as described in the rules as minimum bid is increased by 1 on each bid)
         ({ company }) => {
-          game.message(company.name + " is up for auction. Starting bid is " + company.initialBid + " starting player is " + game.firstPlayerOfAuction);
           game.lastBid = company.initialBid - 1;
           game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
         },
@@ -692,7 +741,6 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
             succeedingBidder = game.firstPlayerOfAuction;
           }
 
-          game.message(`succeeding bidder is ${succeedingBidder} with a bid of ${price}`);
           game.transferMoney(price, succeedingBidder!.my(PlayerTableau)!, company);
           game.transferStocks(1, company, succeedingBidder!.my(PlayerTableau)!);
 
@@ -706,8 +754,6 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     'action-auction',
     ({ company }) => {
       game.lastBid = Math.ceil( company.getBalance() / company.countStocksOutstanding() ) - 1;
-      game.message(company.name + " is up for auction. Starting bid is " + (game.lastBid+1) + " starting player is " + game.firstPlayerOfAuction);
-      game.message(`${company.countStocksOutstanding()} stocks are outstanding`)
       game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
     },
     // Execution: let each player bid or pass until only one player is left
@@ -718,8 +764,6 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       if (succeedingBidderIndex !== -1) {
         var price = game.lastBid;
         var succeedingBidder = game.players[succeedingBidderIndex];
-
-        game.message(`succeeding bidder is ${succeedingBidder} with a bid of ${price}`);
 
         game.transferMoney(price, succeedingBidder!.my(PlayerTableau)!, company);
         game.transferStocks(1, company, succeedingBidder!.my(PlayerTableau)!);
@@ -745,6 +789,33 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   game.defineSubflow(
     'dividend-phase',
 
-    () => { game.message("Dividend phase"); }
+    eachPlayer({
+      name: 'receivingPlayer',
+      do: [
+        // Calculate this player's dividend for this company
+        ({ receivingPlayer }) => {
+          receivingPlayer.dividendAmount = 0;
+          game.railwayCompanies.forEach((company) => {
+            receivingPlayer.dividendAmount += receivingPlayer.my(PlayerTableau).all(Stock, `${company.name}-stock`).length * Math.ceil(company.income / company.countStocksOutstanding());
+          })
+        },
+        // Pause the flow until this player confirms
+        playerActions({
+          player: ({ receivingPlayer }) => receivingPlayer,
+          skipIf: 'never',
+          actions: [
+            {
+              name: 'confirmDividend',
+              prompt: ({ receivingPlayer, company }) =>
+                `Confirm: $${receivingPlayer.dividendAmount} dividend is paid to you.`,
+              do: ({ receivingPlayer }) => {
+                game.transferMoney(receivingPlayer.dividendAmount, bank, receivingPlayer.my(PlayerTableau)
+                );
+              },
+            },
+          ],
+        }),
+      ],
+    }),
   );
 });

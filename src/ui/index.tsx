@@ -52,6 +52,25 @@ render(setup, {
   ],
   settings: {
   },
+  announcements: {
+    victory: game => (
+      <div>
+        <h1>
+          {game.getWinners()!.length > 1 ? "It's a tie!" : "Victory!"}
+        </h1>
+
+        <p>
+          {game.getWinners()!.map(player => player.name).join(", ")}
+          {game.getWinners()!.length > 1 ? " are the winners!" : " wins!"}
+        </p>
+
+        <p>
+          Winning balance:{" "}
+          {(game.getWinners()![0] as ChicagoExpressPlayer).getBalance()}
+        </p>
+      </div>
+    )
+  },
   layout: (game, player, boardSize) => {
     game.disableDefaultAppearance();
     //game.showLayoutBoundingBoxes();
