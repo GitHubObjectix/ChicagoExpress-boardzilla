@@ -117,17 +117,16 @@ render(setup, {
     const industrialCityTrackCellFrameHeight = 2.2;
     game.layout(Board, { area: { left: 20, top: 0, width: 58, height: 100, }, });
     game.all(Board).layout("industrial-city-track", { area: { left: 31.6, top: 80.5, width: 23.24, height: 11.95, } });
-    for(let i = 0; i < 8; ++i) {
-      game.all("industrial-city-track").layout(`detroit-${i}`, { area: { left: i*industrialCityTrackCellWidth + i*industrialCityTrackCellFrameWidth, top: 0, width: industrialCityTrackCellWidth, height: industrialCityTrackCellHeight } });
-    }
-    for(let i = 0; i < 4; ++i) {
-      let j = i + 2;
-      game.all("industrial-city-track").layout(`wheeling-${i}`, { area: { left: j * industrialCityTrackCellWidth + j * industrialCityTrackCellFrameWidth, top: industrialCityTrackCellFrameHeight + industrialCityTrackCellHeight, width: industrialCityTrackCellWidth, height: industrialCityTrackCellHeight } });
-    }
-    for(let i = 0; i < 3; i=i+2) {
-      let j = 3 + 2 * i;
-      game.all("industrial-city-track").layout(`pittsburgh-${i}`, { area: { left: j * industrialCityTrackCellWidth + j * industrialCityTrackCellFrameWidth, top: 2 * (industrialCityTrackCellFrameHeight + industrialCityTrackCellHeight), width: industrialCityTrackCellWidth, height: industrialCityTrackCellHeight } });
-    }
+    ChicagoExpressSetup.industrialCities.forEach((industrialCity, i) => {
+      ChicagoExpressSetup.industrialCityTrackCells[i].forEach((cellIndex, j) => {
+        const k = ChicagoExpressSetup.industrialCityTrackCells[i][j] - 1;
+        game.all("industrial-city-track").layout(
+          `${ChicagoExpressSetup.industrialCityNames[i]}-${cellIndex}`, {
+            area: {
+              left: k*industrialCityTrackCellWidth + k*industrialCityTrackCellFrameWidth,
+              top: i * (industrialCityTrackCellFrameHeight + industrialCityTrackCellHeight), width: industrialCityTrackCellWidth, height: industrialCityTrackCellHeight } });
+      })
+    });
 
     game.all(Board).layout(AuctionGauge, { area: { left: 4.2, top: 52.6, width: 12.04, height: 12.04, } })
     game.all(Board).layout(DevelopmentGauge, { area: { left: 4.2, top: 67.9, width: 12.04, height: 12.04, } })

@@ -12,6 +12,7 @@ import {
 import {
   ChicagoExpressSetup,
   CostAndIncome,
+  IndustrialCities,
   RailwayCompanies
 } from './game-setup.js'
 
@@ -173,7 +174,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
     return adjacentFields;
   }
 
-  getSelectableFieldsForCompany(company: RailwayCompany) : HexagonalField[] {
+  getSelectableFieldsForConstruction(company: RailwayCompany) : HexagonalField[] {
     var selectableFields : HexagonalField[] = [];
 
     this.getFieldsOccupiedByCompany(company).forEach((field) => {
@@ -187,6 +188,51 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
       ).values(),
     ].filter((field) => this.canPutTrainOnField(company, field));
     console.log(`selectable fields for ${company} are ${selectableFields}`);
+
+    return selectableFields;
+  }
+
+  getSelectableFieldsForDevelopment() : HexagonalField[] {
+    var selectableFields : HexagonalField[] = [];
+
+    var citiesMountainsAndForests : [number, number][] = ChicagoExpressSetup.cities.concat(ChicagoExpressSetup.mountains).concat(ChicagoExpressSetup.forests);
+    citiesMountainsAndForests.forEach((field) => {
+      const hexField = this.first(`hex-${field[0]}-${field[1]}`) as HexagonalField;
+      if (hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.has('house'))
+        selectableFields.push(hexField);
+    })
+
+    var hexField = this.first(`hex-${ChicagoExpressSetup.Wheeling[0]}-${ChicagoExpressSetup.Wheeling[1]}`) as HexagonalField;
+    if (hexField.has(Piece, (piece) => piece.name.endsWith('-train'))) {
+      console.log(`pittsburgh has a train`);
+      const cells = this.first('industrial-city-track')?.all(Space, (space) => space.name.startsWith(`${ChicagoExpressSetup.industrialCityNames[IndustrialCities.Wheeling]}-`));
+      console.log(`cells size of ${cells?.length}`);
+      for (const [index, cell] of cells!.entries()) {
+        console.log(`testing ${index}`);
+        const house = cell.first('house') as House;
+
+        if (house != undefined && index < ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Wheeling].length-1) {
+          selectableFields.push(hexField);
+          break;
+        }
+      }
+    }
+
+    var hexField = this.first(`hex-${ChicagoExpressSetup.Pittsburgh[0]}-${ChicagoExpressSetup.Pittsburgh[1]}`) as HexagonalField;
+    if (hexField.has(Piece, (piece) => piece.name.endsWith('-train'))) {
+      console.log(`pittsburgh has a train`);
+      const cells = this.first('industrial-city-track')?.all(Space, (space) => space.name.startsWith(`${ChicagoExpressSetup.industrialCityNames[IndustrialCities.Pittsburgh]}-`));
+      console.log(`cells size of ${cells?.length}`);
+      for (const [index, cell] of cells!.entries()) {
+        console.log(`testing ${index}`);
+        const house = cell.first('house') as House;
+
+        if (house != undefined && index < ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Pittsburgh].length-1) {
+          selectableFields.push(hexField);
+          break;
+        }
+      }
+    }
 
     return selectableFields;
   }
@@ -338,12 +384,12 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   housePile.createMany(ChicagoExpressSetup.houses, House, 'house');
 
   const industrialTrack = board.create(Space, "industrial-city-track");
-  for(let i = 0; i < 8; i++) { var cell = industrialTrack.create(Space, `detroit-${i}`);};
-  for(let i = 0; i < 4; i++) { industrialTrack.create(Space, `wheeling-${i}`)};
-  for(let i = 0; i < 3; i++) { industrialTrack.create(Space, `pittsburgh-${i}`)};
-  industrialTrack.first(Space, 'detroit-0')!.createMany(1, House, 'house');
-  industrialTrack.first(Space, 'wheeling-0')!.createMany(1, House, 'house');
-  industrialTrack.first(Space, 'pittsburgh-0')!.createMany(1, House, 'house');
+  ChicagoExpressSetup.industrialCities.forEach((industrialCity, index) => {
+    ChicagoExpressSetup.industrialCityTrackCells[index].forEach((cellIndex) => {
+      industrialTrack.create(Space, `${ChicagoExpressSetup.industrialCityNames[index]}-${cellIndex}`);
+    });
+    industrialTrack.first(`${ChicagoExpressSetup.industrialCityNames[index]}-${ChicagoExpressSetup.industrialCityTrackCells[index][0]}`)?.createMany(1, House, 'house');
+  })
 
   const auctionGauge = board.create(AuctionGauge, "auction-gauge");
   board.create(DevelopmentGauge, "development-gauge");
@@ -482,7 +528,72 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                         () => { game.firstPlayerOfAuction = game.players.current(); Do.subflow('action-auction', { company: game.selectedCompany }) },
                       ]
                     },
-                    { eq: 'development-gauge', do: () => { game.message("development selected") } },
+                    {
+                      eq: 'development-gauge', do: [
+                        () => {
+                          // determine fields that can be developed still
+                          game.selectableFields = game.getSelectableFieldsForDevelopment();
+                          game.gameState = GameStates.SelectFields;
+                        },
+                        ifElse({
+                          name: 'checkIfFieldsAreSelectable',
+                          if: ({}) => { return game.selectableFields.length > 0 },
+                          do: [
+                            playerActions({ actions: ["selectField", "skip"] }),
+                            ifElse({
+                              name: 'checkIfFieldSelected',
+                              if: ({ }) => { return game.selectedField != undefined },
+                              do: [
+                                () => {
+                                  if (ChicagoExpressSetup.fieldIsCity(game.selectedField!.row, game.selectedField!.column) ||
+                                      ChicagoExpressSetup.fieldIsMountain(game.selectedField!.row, game.selectedField!.column)) {
+                                    const house = game.first(Space, 'house-pile')!.first('house')! as House;
+                                    house.putInto(game.selectedField!);
+
+                                    // incomes of all affected railway companies increases
+                                    const train = game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
+                                      const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
+                                      company.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped];
+                                    });
+                                  } else
+                                  if (ChicagoExpressSetup.fieldIsForest(game.selectedField!.row, game.selectedField!.column)) {
+                                    const house = game.first(Space, 'house-pile')!.first('house')! as House;
+                                    house.putInto(game.selectedField!);
+
+                                    // balance of affected railway company increases by $2
+                                    const train = game.selectedField!.first(Piece, (piece) => piece.name.endsWith('-train'))!;
+                                    const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
+                                    game.transferMoney(2, bank, company);
+                                  } else
+                                  if (ChicagoExpressSetup.fieldIsIndustry(game.selectedField!.row, game.selectedField!.column)) {
+                                    const industrialCityIndex = ChicagoExpressSetup.industrialCities.findIndex((field) => field[0] == game.selectedField!.row && field[1] == game.selectedField!.column);
+                                    const cells = game.first('industrial-city-track')?.all(Space, (space) =>space.name.startsWith(`${ChicagoExpressSetup.industrialCityNames[industrialCityIndex]}-`));
+
+                                    for (const [index, cell] of cells!.entries()) {
+                                      const house = cell.first('house') as House;
+                                      if (house != undefined) {
+                                        const targetCell = game.first(
+                                          `${ChicagoExpressSetup.industrialCityNames[industrialCityIndex]}-${ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index + 1]}`
+                                        );
+                                        house.putInto(targetCell!);
+
+                                        // income of all affected railway company increases
+                                        const train = game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
+                                          const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
+                                          company.income += ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index+1] - ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index];
+                                        });
+                                        break;
+                                      }
+                                    }
+                                  }
+                                }
+                              ],
+                              else: Do.break
+                            })
+                          ]
+                        })
+                      ]
+                    },
                     {
                       eq: 'route-construction-gauge', do: [
                         () => {
@@ -501,7 +612,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                               next: x => x + 1,
                               while: x => x < 3,
                               do: [
-                                () => { game.selectableFields = game.getSelectableFieldsForCompany(game.selectedCompany!); game.gameState = GameStates.SelectFields; },
+                                () => { game.selectableFields = game.getSelectableFieldsForConstruction(game.selectedCompany!); game.gameState = GameStates.SelectFields; },
                                 ifElse({
                                   name: 'checkIfFieldsAreSelectable',
                                   if: ({}) => { return game.selectableFields.length > 0 },

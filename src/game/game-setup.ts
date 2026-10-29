@@ -6,6 +6,12 @@ export enum RailwayCompanies {
   CandO,
 }
 
+export enum IndustrialCities {
+  Detroit = 0,
+  Wheeling,
+  Pittsburgh
+}
+
 export enum CostAndIncome {
   ConstructionCost = 0,
   Income,
@@ -88,7 +94,7 @@ export class ChicagoExpressSetup {
     [7, 7], [8, 7],
     [5, 8], [7, 8],
     [2, 9], [3, 9], [4, 9], [5, 9],
-    [2, 10], [3, 10], [4, 10], [5, 10], [9, 10],
+    [2, 10], [3, 10], [5, 10], [9, 10],
     [2, 11], [3, 11], [7, 11], [8, 11],
     [1, 12], [2, 12], [3, 12], [7, 12], [8, 12], [9, 12],
     [1, 13], [2, 13], [3, 13], [7, 13],
@@ -98,8 +104,20 @@ export class ChicagoExpressSetup {
     [1, 17], [2, 17], [3, 17],
   ]
 
-  static readonly industries: [number, number][] = [
-    [0, 4], [6, 8], [4, 10]
+  static readonly Detroit: [number, number] = [0, 4];
+  static readonly Wheeling: [number, number] = [6, 8];
+  static readonly Pittsburgh: [number, number] = [4, 10];
+
+  static readonly industrialCities: [number, number][] = [
+    ChicagoExpressSetup.Detroit, ChicagoExpressSetup.Wheeling, ChicagoExpressSetup.Pittsburgh
+  ]
+  static readonly industrialCityNames : string[] = [
+    'detroit', 'wheeling', 'pittsburgh'
+  ]
+  static readonly industrialCityTrackCells : number[][] = [
+    [1, 2, 3, 4, 5, 6, 7, 8],
+    [3, 4, 5, 6],
+    [4, 6, 8]
   ]
 
   static readonly cities: [number, number][] = [
@@ -120,7 +138,7 @@ export class ChicagoExpressSetup {
   }
 
   public static fieldIsIndustry(rowIndex: number, columnIndex: number) {
-    return ChicagoExpressSetup.industries.some(([a, b]) => a == rowIndex && b == columnIndex);
+    return ChicagoExpressSetup.industrialCities.some(([a, b]) => a == rowIndex && b == columnIndex);
   }
 
   public static fieldIsCity(rowIndex: number, columnIndex: number) {
