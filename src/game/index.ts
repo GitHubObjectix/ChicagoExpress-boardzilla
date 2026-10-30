@@ -539,10 +539,10 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                       eq: 'auction-gauge', do: [
                         () => { game.selectableCompanies = game.getSelectableCompaniesForAuction(); game.gameState = GameStates.SelectCompany },
                         playerActions({ actions: ["selectCompany"] }),
-                        () => { game.gameState = GameStates.None },
                         () => { game.firstPlayerOfAuction = game.players.current(); },
                         () => { Do.subflow('action-auction', { company: game.selectedCompany }); },
-                        () => { game.firstPlayerOfAuction!.setCurrent(); }
+                        () => { game.firstPlayerOfAuction!.setCurrent(); },
+                        () => { game.gameState = GameStates.None }
                       ]
                     },
                     {
@@ -728,6 +728,8 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
         ({ company }) => {
           game.lastBid = company.initialBid - 1;
           game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
+          game.selectableCompanies = [company];
+          game.gameState = GameStates.SelectCompany;
         },
         // Execution: let each player bid or pass until only one player is left
         ({}) => { Do.subflow('auction')},
@@ -748,6 +750,8 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
           game.transferStocks(1, company, succeedingBidder!.my(PlayerTableau)!);
 
           game.firstPlayerOfAuction = succeedingBidder;
+          succeedingBidder!.setCurrent();
+          game.gameState = GameStates.None;
         },
       ],
     }),
