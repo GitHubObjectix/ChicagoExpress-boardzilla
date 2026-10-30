@@ -206,7 +206,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
 
     var citiesMountainsAndForests : [number, number][] = ChicagoExpressSetup.cities.concat(ChicagoExpressSetup.mountains).concat(ChicagoExpressSetup.forests);
     citiesMountainsAndForests.forEach((field) => {
-      const hexField = this.first(`hex-${field[0]}-${field[1]}`) as HexagonalField;
+      const hexField = this.game.first(`hex-${field[0]}-${field[1]}`) as HexagonalField;
       if (hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
         selectableFields.push(hexField);
     })
