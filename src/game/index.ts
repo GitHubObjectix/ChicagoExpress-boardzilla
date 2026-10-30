@@ -210,7 +210,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
       console.log(`cells size of ${cells?.length}`);
       for (const [index, cell] of cells!.entries()) {
         console.log(`testing ${index}`);
-        const house = cell.first('house') as House;
+        const house = cell.first('house') as unknown as House;
 
         if (house != undefined && index < ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Wheeling].length-1) {
           selectableFields.push(hexField);
@@ -495,7 +495,6 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       prompt: "Confirm dividend payment"
     })
     .do (() => {
-
     }),
   });
 
@@ -505,7 +504,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       // start balance is 120$ and is divided equally among all players
       game.players.forEach(player => { game.transferMoney(120 / game.players.length, bank, player.my(PlayerTableau)!) })
       // TODO! select the players who starts the game
-      game.firstPlayerOfAuction = game.players[0];
+      game.players[0].setCurrent();
 
       game.railwayCompanies.slice(1).forEach((company) => {
         const train = company.first('trains')!.first(`${company.name}-train`)! as Train;
@@ -514,7 +513,9 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     },
 
     // Initial auction phase
-    ({}) => { Do.subflow('initial-auction')},
+    () => { game.firstPlayerOfAuction = game.players.current(); },
+    () => { Do.subflow('initial-auction'); Do.subflow('initial-auction'); },
+    () => { game.firstPlayerOfAuction!.setCurrent(); },
 
     // Main game loop
     whileLoop({
@@ -539,7 +540,9 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                         () => { game.selectableCompanies = game.getSelectableCompaniesForAuction(); game.gameState = GameStates.SelectCompany },
                         playerActions({ actions: ["selectCompany"] }),
                         () => { game.gameState = GameStates.None },
-                        () => { game.firstPlayerOfAuction = game.players.current(); Do.subflow('action-auction', { company: game.selectedCompany }) },
+                        () => { game.firstPlayerOfAuction = game.players.current(); },
+                        () => { Do.subflow('action-auction', { company: game.selectedCompany }); },
+                        () => { game.firstPlayerOfAuction!.setCurrent(); }
                       ]
                     },
                     {
