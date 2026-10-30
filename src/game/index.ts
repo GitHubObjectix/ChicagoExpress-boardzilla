@@ -540,6 +540,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                         () => { game.selectableCompanies = game.getSelectableCompaniesForAuction(); game.gameState = GameStates.SelectCompany },
                         playerActions({ actions: ["selectCompany"] }),
                         () => { game.firstPlayerOfAuction = game.players.current(); },
+                        () => { game.selectableCompanies = [game.selectedCompany!]; },
                         () => { Do.subflow('action-auction', { company: game.selectedCompany }); },
                         () => { game.firstPlayerOfAuction!.setCurrent(); },
                         () => { game.gameState = GameStates.None }
