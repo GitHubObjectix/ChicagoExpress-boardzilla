@@ -105,8 +105,9 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
    var fieldsOccupiedByCompany : HexagonalField[] = [];
 
     this.game.all(Piece, `${company.name}-train`).forEach((train) => {
-      const container = train.container();
-      if (container != undefined && container.name.startsWith('hex-')) {
+      // trains are in trains-space of respective hex-{row}-{column} spaces
+      const container = train.container()?.container();
+      if (container!.name.startsWith('hex-')) {
         const hexField = container as HexagonalField;
         fieldsOccupiedByCompany.push(hexField);
       }
@@ -118,30 +119,37 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   }
 
   canPutTrainOnField(company: RailwayCompany, hexField: HexagonalField) : boolean {
-    var canPutTrainOnField = false;
+    var canPutTrainOnField : boolean = false;
 
     // check if fields has space for the train to put
-    if (!hexField.has(`${company.name}-train`)) {
+    if (!hexField.first('trains-space')!.has(`${company.name}-train`)) {
       // hex field does not contain any train of respective company
+      console.log(`${hexField} has no train of company ${company}`);
 
-      if (ChicagoExpressSetup.mountains.includes([hexField.row, hexField.column]) || ChicagoExpressSetup.forests.includes([hexField.row, hexField.column])) {
+      if (ChicagoExpressSetup.fieldIsMountain(hexField.row, hexField.column) || ChicagoExpressSetup.fieldIsForest(hexField.row, hexField.column)) {
         // if hex field is mountain or forest there must be no other train
-        canPutTrainOnField = hexField.all(Piece, (piece) => piece.name.endsWith('-train')).length == 0;
+        canPutTrainOnField = hexField.first('trains-space')!.all(Piece, (piece) => piece.name.endsWith('-train')).length == 0;
+      }
+      else
+      if (ChicagoExpressSetup.fieldIsStartField(hexField.row, hexField.column)) {
+        console.log(`${hexField} is start field`);
+        canPutTrainOnField = false;
       }
       else {
         canPutTrainOnField = true;
       }
     }
-    console.log(`${company} can put train on ${hexField}: ${canPutTrainOnField}`);
 
     if (canPutTrainOnField) {
       // check if company can afford to put the train
-      const presentTrains = 1 + hexField.all(Piece, (piece) => piece.name.endsWith('-train')).length;
+      const presentTrains = 1 + hexField.first('trains-space')!.all(Piece, (piece) => piece.name.endsWith('-train')).length;
       const constructionCost = presentTrains * -ChicagoExpressSetup.getCostAndIncomeConfiguration(hexField.row, hexField.column)[CostAndIncome.ConstructionCost];
 
       console.log(`on field ${hexField} are ${presentTrains-1} trains present which results in construction cost of ${constructionCost}`);
       canPutTrainOnField = company.getBalance() >= constructionCost;
     }
+
+    console.log(`${company} can put train on ${hexField}: ${canPutTrainOnField}`);
 
     return canPutTrainOnField;
   }
@@ -181,14 +189,14 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
     this.getFieldsOccupiedByCompany(company).forEach((field) => {
       selectableFields = selectableFields.concat(this.getAdjacentFields([field.row, field.column]).map((field) => this.game.first(`hex-${field[0]}-${field[1]}`) as HexagonalField ));
     });
-    console.log(`selectable fields for ${company} are ${selectableFields}`);
+    console.log(`before unify: selectable fields for ${company} are ${selectableFields}`);
 
     selectableFields = [
       ...new Map(
         selectableFields.map((hexField) => [`${hexField.row},${hexField.column}`, hexField as HexagonalField])
       ).values(),
     ].filter((field) => this.canPutTrainOnField(company, field));
-    console.log(`selectable fields for ${company} are ${selectableFields}`);
+    console.log(`after unify: selectable fields for ${company} are ${selectableFields}`);
 
     return selectableFields;
   }
@@ -199,7 +207,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
     var citiesMountainsAndForests : [number, number][] = ChicagoExpressSetup.cities.concat(ChicagoExpressSetup.mountains).concat(ChicagoExpressSetup.forests);
     citiesMountainsAndForests.forEach((field) => {
       const hexField = this.first(`hex-${field[0]}-${field[1]}`) as HexagonalField;
-      if (hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.has('house'))
+      if (hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
         selectableFields.push(hexField);
     })
 
@@ -382,7 +390,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     {
       const hexField = map.create(HexagonalField, `hex-${row}-${columnIndex}`, { row: row, column: columnIndex });
       const trains = hexField.create(Space, 'trains-space')
-      if (ChicagoExpressSetup.fieldCanBeDeveloped(row, columnIndex)) {
+      if (ChicagoExpressSetup.fieldCanContainHouse(row, columnIndex)) {
         const house = hexField.create(Space, 'house-space');
       }
     }
@@ -508,7 +516,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
       game.railwayCompanies.slice(1).forEach((company) => {
         const train = company.first('trains')!.first(`${company.name}-train`)! as Train;
-        train.putInto(game.getStartField(company.name));
+        train.putInto(game.getStartField(company.name).first('trains-space')!);
       });
     },
 
@@ -576,7 +584,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                   } else
                                   if (ChicagoExpressSetup.fieldIsForest(game.selectedField!.row, game.selectedField!.column)) {
                                     const house = game.first(Space, 'house-pile')!.first('house')! as House;
-                                    house.putInto(game.selectedField!);
+                                    house.putInto(game.selectedField!.first('house-space')!);
 
                                     // balance of affected railway company increases by $2
                                     const train = game.selectedField!.first(Piece, (piece) => piece.name.endsWith('-train'))!;
@@ -643,7 +651,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                       do: [
                                         () => {
                                           const train = game.selectedCompany!.first(Space, 'trains')!.first(Train);
-                                          train!.putInto(game.selectedField!);
+                                          train!.putInto(game.selectedField!.first('trains-space')!);
                                           game.transferMoney(
                                             -game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).length * ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.ConstructionCost],
                                             game.selectedCompany!,

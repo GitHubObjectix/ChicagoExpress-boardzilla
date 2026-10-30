@@ -133,6 +133,10 @@ export class ChicagoExpressSetup {
     [4, 13],
   ]
 
+  static readonly startFields: [number, number][] = [
+    [3, 3], [5, 17], [7, 16], [3, 18], [9, 16]
+  ]
+
   public static fieldIsForest(rowIndex: number, columnIndex: number) {
     return ChicagoExpressSetup.forests.some(([a, b]) => a == rowIndex && b == columnIndex);
   }
@@ -149,7 +153,11 @@ export class ChicagoExpressSetup {
     return ChicagoExpressSetup.mountains.some(([a, b]) => a == rowIndex && b == columnIndex);
   }
 
-  public static fieldCanBeDeveloped(rowIndex: number, columnIndex: number) {
+  public static fieldIsStartField(rowIndex: number, columnIndex: number) {
+    return ChicagoExpressSetup.startFields.some(([a, b]) => a == rowIndex && b == columnIndex);
+  }
+
+  public static fieldCanContainHouse(rowIndex: number, columnIndex: number) {
     return (
       ChicagoExpressSetup.fieldIsForest(rowIndex, columnIndex) ||
       ChicagoExpressSetup.fieldIsCity(rowIndex, columnIndex) ||
