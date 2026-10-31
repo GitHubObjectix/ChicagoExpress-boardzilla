@@ -211,17 +211,17 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
         selectableFields.push(hexField);
     });
 
-    ChicagoExpressSetup.mountains.forEach((field) => {
-      const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
-      if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
-        selectableFields.push(hexField);
-    });
+    // ChicagoExpressSetup.mountains.forEach((field) => {
+    //   const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
+    //   if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
+    //     selectableFields.push(hexField);
+    // });
 
-    ChicagoExpressSetup.forests.forEach((field) => {
-      const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
-      if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
-        selectableFields.push(hexField);
-    });
+    // ChicagoExpressSetup.forests.forEach((field) => {
+    //   const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
+    //   if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
+    //     selectableFields.push(hexField);
+    // });
 
     var hexField = this.first(`hex-${ChicagoExpressSetup.Wheeling[0]}-${ChicagoExpressSetup.Wheeling[1]}`) as HexagonalField;
     if (hexField.has(Piece, (piece) => piece.name.endsWith('-train'))) {
