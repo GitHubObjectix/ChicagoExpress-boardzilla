@@ -204,17 +204,24 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   getSelectableFieldsForDevelopment() : HexagonalField[] {
     var selectableFields : HexagonalField[] = [];
 
-    // var citiesMountainsAndForests : [number, number][] = ChicagoExpressSetup.cities.concat(ChicagoExpressSetup.mountains).concat(ChicagoExpressSetup.forests);
-    const citiesMountainsAndForests = [
-      ...ChicagoExpressSetup.cities,
-      ...ChicagoExpressSetup.mountains,
-      ...ChicagoExpressSetup.forests
-    ];
-    citiesMountainsAndForests.forEach((field) => {
+    // by intention the next 3 loops are not combined (-> led to a server error for some reason)
+    ChicagoExpressSetup.cities.forEach((field) => {
+      const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
+      if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has(House, 'house'))
+        selectableFields.push(hexField);
+    });
+
+    ChicagoExpressSetup.mountains.forEach((field) => {
       const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
       if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
         selectableFields.push(hexField);
-    })
+    });
+
+    ChicagoExpressSetup.forests.forEach((field) => {
+      const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
+      if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
+        selectableFields.push(hexField);
+    });
 
     var hexField = this.first(`hex-${ChicagoExpressSetup.Wheeling[0]}-${ChicagoExpressSetup.Wheeling[1]}`) as HexagonalField;
     if (hexField.has(Piece, (piece) => piece.name.endsWith('-train'))) {
@@ -579,7 +586,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                   if (ChicagoExpressSetup.fieldIsCity(game.selectedField!.row, game.selectedField!.column) ||
                                       ChicagoExpressSetup.fieldIsMountain(game.selectedField!.row, game.selectedField!.column)) {
                                     const house = game.first(Space, 'house-pile')!.first('house')! as House;
-                                    house.putInto(game.selectedField!);
+                                    house.putInto(game.selectedField!.first('house-space')!);
 
                                     // incomes of all affected railway companies increases
                                     const train = game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
