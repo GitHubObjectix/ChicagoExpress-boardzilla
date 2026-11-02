@@ -104,6 +104,8 @@ export class ChicagoExpressSetup {
     [1, 17], [2, 17], [3, 17]
   ]
 
+  static readonly Chicago: [number, number] = [2, 0];
+  static readonly FortWayne: [number, number] = [3, 3];
   static readonly Detroit: [number, number] = [0, 4];
   static readonly Wheeling: [number, number] = [6, 8];
   static readonly Pittsburgh: [number, number] = [4, 10];

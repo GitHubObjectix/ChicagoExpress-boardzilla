@@ -60,6 +60,8 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
 
   dividends: Dividends = {};
 
+  wasChicagoReached: boolean = false;
+
   isFieldSelectable(hexField: HexagonalField) : boolean {
     return this.selectableFields.find((element) => hexField.row == element.row && hexField.column == element.column) != undefined;
   }
@@ -218,17 +220,17 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
         selectableFields.push(hexField);
     });
 
-    // ChicagoExpressSetup.mountains.forEach((field) => {
-    //   const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
-    //   if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
-    //     selectableFields.push(hexField);
-    // });
+    ChicagoExpressSetup.mountains.forEach((field) => {
+      const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
+      if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
+        selectableFields.push(hexField);
+    });
 
-    // ChicagoExpressSetup.forests.forEach((field) => {
-    //   const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
-    //   if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
-    //     selectableFields.push(hexField);
-    // });
+    ChicagoExpressSetup.forests.forEach((field) => {
+      const hexField = this.first(HexagonalField, `hex-${field[0]}-${field[1]}`);
+      if (hexField != undefined && hexField.has(Piece, (piece) => piece.name.endsWith('-train')) && !hexField.first('house-space')!.has('house'))
+        selectableFields.push(hexField);
+    });
 
     var hexField = this.first(`hex-${ChicagoExpressSetup.Wheeling[0]}-${ChicagoExpressSetup.Wheeling[1]}`) as HexagonalField;
     if (hexField.has(Piece, (piece) => piece.name.endsWith('-train'))) {
@@ -319,9 +321,9 @@ export class RailwayCompany extends Space<ChicagoExpressGame> {
     var isOpened = true;
 
     if (ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id == this.name) {
-      var field = this.game.first('hex-2-0'); // Chicago field
-      if (field != undefined)
-        isOpened = !field.first('trains-space')!.isEmpty();
+      var field = this.game.first(`hex-${ChicagoExpressSetup.FortWayne[0]}-${ChicagoExpressSetup.FortWayne[1]}`);
+      if (field != undefined && field.first('trains-space')!.has(Piece, `${ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id}-train`))
+        isOpened = true;
     }
 
     return isOpened && this.hasStocks();
@@ -439,7 +441,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   // create space for Wabash railway company
   const wabashId = ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id
-  const wabash = board.create(RailwayCompany, wabashId, {initialBid: 0, income: 0});
+  const wabash = board.create(RailwayCompany, wabashId, {initialBid: ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].initialBid, income: 0});
   wabash.create(Space, 'account');
   var trains = wabash.create(Space, 'trains');
   trains.createMany(ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].trains, Train, `${wabashId}-train`);
@@ -463,8 +465,8 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   game.defineActions({
     bid: player => action({
-      prompt: "Gebot abgeben",
-      description: "Das neue Gebot muss höher als das bisherige",
+      prompt: "Place a bid",
+      description: "placing a bid",
       condition: !player.passedThisAuction
     }).chooseNumber(
       "amount", {
@@ -478,7 +480,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     ),
     pass: player => action({
       prompt: "Pass",
-      description: "Pass on this auction",
+      description: "pass on this auction",
       condition: !player.passedThisAuction
     }).do(
       () => player.passedThisAuction = true
@@ -493,7 +495,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     }),
     selectAction: player => action({
       prompt: "Select an action gauge",
-      description: "Select an action by clicking on a gauge"
+      description: "selecting an action"
     }).chooseOnBoard('actionChoice', () => game.getSelectableActions())
     .do(({actionChoice}) => {
       game.selectedActionGauge = actionChoice;
@@ -502,7 +504,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     ),
     selectCompany: player => action({
       prompt: "Select a railway company",
-      description: "Select a railway company by clicking on its panel"
+      description: "selecting a railway company"
     }).chooseOnBoard('companyChoice', () => game.getSelectableCompanies())
     .do(({companyChoice}) => {
       game.selectedCompany = companyChoice;
@@ -511,7 +513,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     ),
     selectField: player => action({
       prompt: "Select a field",
-      description: "Select a field by clicking on the map"
+      description: "selecting a field"
     }).chooseOnBoard('fieldChoice', () => game.getSelectableFields())
     .do(({fieldChoice}) => {
       game.selectedField = fieldChoice;
@@ -566,11 +568,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                       eq: 'auction-gauge', do: [
                         () => { game.selectableCompanies = game.getSelectableCompaniesForAuction(); game.gameState = GameStates.SelectCompany },
                         playerActions({ actions: ["selectCompany"] }),
-                        () => { game.firstPlayerOfAuction = game.players.current(); },
-                        () => { game.selectableCompanies = [game.selectedCompany!]; },
-                        () => { Do.subflow('action-auction', { company: game.selectedCompany }); },
-                        () => { game.firstPlayerOfAuction!.setCurrent(); },
-                        () => { game.gameState = GameStates.None }
+                        () => { Do.subflow('action-auction', { company: game.selectedCompany }); }
                       ]
                     },
                     {
@@ -678,6 +676,12 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                           game.selectedCompany!.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.Income];
                                           if (game.selectedField!.has(Piece, 'house'))
                                             game.selectedCompany!.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped];
+                                        },
+                                        () => {
+                                          if (game.selectedField!.row == ChicagoExpressSetup.Chicago[0] && game.selectedField!.column == ChicagoExpressSetup.Chicago[1]) {
+                                          //if (game.selectedField!.row == 4 && game.selectedField!.column == 14) {
+                                            game.wasChicagoReached = true;
+                                          }
                                         }
                                       ],
                                       else: Do.break
@@ -695,6 +699,32 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                   ],
                   default: () => { }
                 }),
+              ]
+            }),
+            ifElse({
+              name: 'checkChicagoReached',
+              if: ({}) => game.wasChicagoReached,
+              do: [
+                () => {
+                  console.log('Chicago was reached, starting dividend phase');
+                  game.wasChicagoReached = false;
+                  Do.subflow('dividend-phase');
+
+                  const hexFieldFortWayne = game.first(`hex-${ChicagoExpressSetup.FortWayne[0]}-${ChicagoExpressSetup.FortWayne[1]}`) as HexagonalField;
+                  if (!hexFieldFortWayne!.first('trains-space')!.has(Piece, (piece) => piece.name.endsWith(`${ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id}-train`))) {
+                    console.log('Wabash line is opening, putting first train into Fort Wayne field');
+                    const companyWabash = game.railwayCompanies[RailwayCompanies.Wabash];
+
+                    // open Wabash line by putting the first train into Fort Wayne field
+                    const train = companyWabash.first(Space, 'trains')!.first(Train);
+                    train!.putInto(hexFieldFortWayne!.first('trains-space')!);
+                    // start income of Wabash depends on whether Fort Wayne is developed or not
+                    companyWabash.income = hexFieldFortWayne!.first('house-space')!.has(Piece, 'house') ? 3 : 1;
+                    companyWabash.initialBid = companyWabash.income;
+
+                    Do.subflow('action-auction', { company: companyWabash });
+                  }
+                },
               ]
             }),
             ifElse({
@@ -787,8 +817,14 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   game.defineSubflow(
     'action-auction',
+    ({company}) => {
+      game.selectableCompanies = [company];
+      game.gameState = GameStates.SelectCompany;
+
+      game.firstPlayerOfAuction = game.players.current();
+    },
     ({ company }) => {
-      game.lastBid = Math.ceil( company.getBalance() / company.countStocksOutstanding() ) - 1;
+      game.lastBid = Math.ceil( company.income / company.countStocksOutstanding() ) - 1;
       game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
     },
     // Execution: let each player bid or pass until only one player is left
@@ -803,6 +839,10 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
         game.transferMoney(price, succeedingBidder!.my(PlayerTableau)!, company);
         game.transferStocks(1, company, succeedingBidder!.my(PlayerTableau)!);
       }
+    },
+    () => {
+      game.firstPlayerOfAuction!.setCurrent();
+      game.gameState = GameStates.None;
     }
   )
 
@@ -836,7 +876,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       })
     },
     () => { game.announce('dividend'); },
-
+    () => { game.firstPlayerOfAuction = game.players.current(); },
     eachPlayer({
       name: 'receivingPlayer',
       do: [
@@ -847,5 +887,6 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
         }
       ],
     }),
+    () => { game.firstPlayerOfAuction!.setCurrent(); }
   );
 });
