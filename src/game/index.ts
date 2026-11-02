@@ -20,7 +20,6 @@ export class ChicagoExpressPlayer extends Player<ChicagoExpressGame, ChicagoExpr
   //balance: number = 0;
   passedThisAuction: boolean = false;
   hasPlacedBid: boolean = false;
-  dividendAmount: number = 0;
 
   getBalance() : number {
     return this.my(PlayerTableau)!.first('account')!.all('banknote').length;
@@ -33,6 +32,12 @@ export enum GameStates {
   SelectCompany,
   SelectFields
 }
+
+type Dividends = {
+  [companyId: string]: {
+    [playerId: string]: number;
+  };
+};
 
 export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressPlayer> {
   lastBid: number = 0
@@ -52,6 +57,8 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   selectedActionGauge?: Gauge = undefined;
   selectedCompany?: RailwayCompany = undefined;
   selectedField?: HexagonalField = undefined;
+
+  dividends: Dividends = {};
 
   isFieldSelectable(hexField: HexagonalField) : boolean {
     return this.selectableFields.find((element) => hexField.row == element.row && hexField.column == element.column) != undefined;
@@ -817,32 +824,27 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   game.defineSubflow(
     'dividend-phase',
 
+    () => {
+      game.railwayCompanies.forEach(company => {
+        game.dividends[company.name] = {};
+
+        const dividendPerStock = Math.ceil(company.income / company.countStocksOutstanding());
+        game.players.forEach(player => {
+          game.dividends[company.name][player.id] = player.my(PlayerTableau)!.all(Stock, `${company.name}-stock`).length * dividendPerStock;
+        });
+      })
+    },
+    () => { game.announce('dividend'); },
+
     eachPlayer({
       name: 'receivingPlayer',
       do: [
         // Calculate this player's dividend for this company
-        ({ receivingPlayer }) => {
-          receivingPlayer.dividendAmount = 0;
+        () => {
           game.railwayCompanies.forEach((company) => {
-            receivingPlayer.dividendAmount += receivingPlayer.my(PlayerTableau).all(Stock, `${company.name}-stock`).length * Math.ceil(company.income / company.countStocksOutstanding());
-          })
-        },
-        // Pause the flow until this player confirms
-        playerActions({
-          player: ({ receivingPlayer }) => receivingPlayer,
-          skipIf: 'never',
-          actions: [
-            {
-              name: 'confirmDividend',
-              prompt: ({ receivingPlayer, company }) =>
-                `Confirm: $${receivingPlayer.dividendAmount} dividend is paid to you.`,
-              do: ({ receivingPlayer }) => {
-                game.transferMoney(receivingPlayer.dividendAmount, bank, receivingPlayer.my(PlayerTableau)
-                );
-              },
-            },
-          ],
-        }),
+            game.transferMoney(game.dividends[company.name][game.players.current()!.id], bank, game.players.current()!.my(PlayerTableau)!);
+          });
+        }
       ],
     }),
   );

@@ -53,6 +53,32 @@ render(setup, {
   settings: {
   },
   announcements: {
+    dividend: game => (
+      <table className="dividend-table">
+        <thead>
+          <tr>
+            <th>Railway Company</th>
+            {game.players.map(p => (
+              <th key={p.id}>{p.name}</th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {game.railwayCompanies.map(c => (
+            <tr key={c.name}>
+              <th>{c.name}</th>
+
+              {game.players.map(p => (
+                <td key={p.id}>
+                  ${game.dividends[c.name]?.[p.id] ?? 0}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+   ),
     victory: game => (
       <div>
         <h1>
