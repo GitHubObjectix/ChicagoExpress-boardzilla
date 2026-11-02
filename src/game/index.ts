@@ -825,6 +825,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     'dividend-phase',
 
     () => {
+      // Calculate players dividends for each company
       game.railwayCompanies.forEach(company => {
         game.dividends[company.name] = {};
 
@@ -839,7 +840,6 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     eachPlayer({
       name: 'receivingPlayer',
       do: [
-        // Calculate this player's dividend for this company
         () => {
           game.railwayCompanies.forEach((company) => {
             game.transferMoney(game.dividends[company.name][game.players.current()!.id], bank, game.players.current()!.my(PlayerTableau)!);
