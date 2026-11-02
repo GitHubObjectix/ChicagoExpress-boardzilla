@@ -36,6 +36,8 @@ export class ChicagoExpressSetup {
     {id: "CandO", name: "Chesapeake & Ohio", trains: 26, stocks: 6, initialBid: 8, initialIncome: 5},
   ]
   static readonly houses: number = 20;
+  static readonly incomeTrackHorizonalLength: number = 30;
+  static readonly incomeTrackVerticalLength: number = 20;
 
   static readonly columnConfiguration: [number, number][] = [
     [2, 4],

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25mm" height="22mm" viewBox="0 0 250 220">
+  <title>Chicago Express-style wooden income counter</title>
+  <desc>One low, flat, red wooden cylindrical disc shown in perspective, with an elliptical top and a short curved side wall.</desc>
+  <defs>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#333333"/>
+      <stop offset="1" stop-color="#171717"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#555555"/>
+      <stop offset="0.55" stop-color="#333333"/>
+      <stop offset="1" stop-color="#1A1A1A"/>
+    </linearGradient>
+  </defs>
+  <!-- Short cylindrical wall -->
+  <path d="M34 70
+           C34 54 75 41 125 41
+           C175 41 216 54 216 70
+           L216 131
+           C216 147 175 160 125 160
+           C75 160 34 147 34 131 Z"
+        fill="url(#side)" stroke="#5d1719" stroke-width="2"/>
+  <!-- Bottom edge -->
+  <path d="M34 131 C34 147 75 160 125 160 C175 160 216 147 216 131"
+        fill="none" stroke="#571416" stroke-width="3" opacity="0.8"/>
+  <!-- Top face -->
+  <ellipse cx="125" cy="69" rx="91" ry="30" fill="url(#top)" stroke="#7d2022" stroke-width="2.5"/>
+  <!-- Subtle wood-like highlight -->
+  <path d="M57 63 C78 48 112 43 145 45" fill="none" stroke="#ffb0a4" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+  <ellipse cx="125" cy="69" rx="85" ry="25" fill="none" stroke="#f58a7e" stroke-width="1.4" opacity="0.35"/>
+</svg>

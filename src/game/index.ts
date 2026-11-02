@@ -390,6 +390,7 @@ export class Train extends Piece<ChicagoExpressGame> {}
 export class Stock extends Piece<ChicagoExpressGame> {}
 export class House extends Piece<ChicagoExpressGame> {}
 export class Banknote extends Piece<ChicagoExpressGame> {}
+export class Counter extends Piece<ChicagoExpressGame> {}
 
 /**
  * Main game definitions.
@@ -405,6 +406,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
 
   const board = game.create(Board, 'board');
 
+  // create spaces for the hex grid
   const map = board.create(ConnectedSpaceMap, 'map');
   ChicagoExpressSetup.columnConfiguration.forEach((column, columnIndex) => {
     for(let row = column[0]; row <= column[1]; ++row)
@@ -415,19 +417,22 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
         const house = hexField.create(Space, 'house-space');
       }
     }
-  })
+  });
 
+  // create space for the houses which are not in game yet
   const housePile = board.create(Space, "house-pile");
   housePile.createMany(ChicagoExpressSetup.houses, House, 'house');
 
+  // creates spaces for the industrial track
   const industrialTrack = board.create(Space, "industrial-city-track");
   ChicagoExpressSetup.industrialCities.forEach((industrialCity, index) => {
     ChicagoExpressSetup.industrialCityTrackCells[index].forEach((cellIndex) => {
       industrialTrack.create(Space, `${ChicagoExpressSetup.industrialCityNames[index]}-${cellIndex}`);
     });
     industrialTrack.first(`${ChicagoExpressSetup.industrialCityNames[index]}-${ChicagoExpressSetup.industrialCityTrackCells[index][0]}`)?.createMany(1, House, 'house');
-  })
+  });
 
+  // creates spaces for the action gauges
   const auctionGauge = board.create(AuctionGauge, "auction-gauge");
   board.create(DevelopmentGauge, "development-gauge");
   board.create(RouteConstructionGauge, "route-construction-gauge");
@@ -461,7 +466,26 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
     stocks.createMany(company.stocks, Stock, `${company.id}-stock`)
 
     game.railwayCompanies.push(thisCompany)
-  })
+  });
+
+  // creates spaces for the company income track (income-track-0 is the space to hold the Wabash counter initially)
+  board.create(Space, "income-track-0");
+  const incomeTrackHorizontal = board.create(Space, "income-track-horizontal");
+  for (let i = 1; i <= ChicagoExpressSetup.incomeTrackHorizonalLength; ++i) {
+    incomeTrackHorizontal.create(Space, `income-track-${i}`);
+  }
+  const incomeTrackVertical = board.create(Space, "income-track-vertical");
+  for (let i = ChicagoExpressSetup.incomeTrackHorizonalLength + 1; i <= ChicagoExpressSetup.incomeTrackHorizonalLength + ChicagoExpressSetup.incomeTrackVerticalLength; ++i) {
+    incomeTrackVertical.create(Space, `income-track-${i}`);
+  }
+  // create a space for the +50 game tokens
+  const tokenSpace = board.create(Space, "plus-50-game-tokens");
+  game.railwayCompanies.forEach((company) => {
+    const incomeTrackCell = board.first(`income-track-${company.income}`)!;
+    incomeTrackCell.createMany(1, Counter, `${company.name}-counter`);
+    tokenSpace.createMany(1, Piece, `${company.name}-logo`);
+  });
+
 
   game.defineActions({
     bid: player => action({

@@ -10,6 +10,7 @@ import {
   Stock,
   House,
   Banknote,
+  Counter,
   PlayerTableau,
   RailwayCompany,
   ChicagoExpressPlayer,
@@ -34,10 +35,20 @@ import stockImage_CandO from './assets/CandO-stock.jpg';
 import stockImage_Wabash from './assets/Wabash-stock.jpg';
 import gaugePointer from './assets/gauge-pointer.svg';
 import trainImage_PRR from './pieces/PRR-train.svg'
+import counterImage_PRR from './pieces/PRR-counter.svg'
+import logo_PRR from './assets/PRR-logo.jpg'
 import trainImage_BandO from './pieces/BandO-train.svg'
+import counterImage_BandO from './pieces/BandO-counter.svg'
+import logo_BandO from './assets/BandO-logo.jpg'
 import trainImage_NYC from './pieces/NYC-train.svg'
+import counterImage_NYC from './pieces/NYC-counter.svg'
+import logo_NYC from './assets/NYC-logo.jpg'
 import trainImage_CandO from './pieces/CandO-train.svg'
+import counterImage_CandO from './pieces/CandO-counter.svg'
+import logo_CandO from './assets/CandO-logo.jpg'
 import trainImage_Wabash from './pieces/Wabash-train.svg'
+import counterImage_Wabash from './pieces/Wabash-counter.svg'
+import logo_Wabash from './assets/Wabash-logo.jpg'
 import image_House from './pieces/house.svg'
 import image_Banknote from './pieces/dollar-note.jpg'
 
@@ -99,10 +110,10 @@ render(setup, {
   },
   layout: (game, player, boardSize) => {
     game.disableDefaultAppearance();
-    //game.showLayoutBoundingBoxes();
+    game.showLayoutBoundingBoxes();
 
     const bank = game.first(Bank, 'bank')!;
-    game.layout(bank.name, { area: { left: 80, top: 0, width: 20, height: 20 } });
+    game.layout(bank.name, { area: { left: 81, top: 0, width: 19, height: 20 } });
     bank.layout('account', { area: { left: 5, top: 30, width: 90, height: 60 } });
     bank.appearance({
       render: (bank) => {
@@ -183,11 +194,28 @@ render(setup, {
     game.all(wabashId).layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
     game.all(wabashId).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
 
+    // game.railwayCompanies.forEach((company) => {
+    //   game.all(`${company.name}-train`).appearance({ aspectRatio: 1, render: () => ( <img src={"trainImage_" + ${company.name}}/> ) });
+    //   game.all(`${company.name}-counter`).appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_Wabash}/> ) });
+    //   game.all(`${company.name}-logo`).appearance({ aspectRatio: 1, render: () => ( <img src={logo_Wabash}/> ) });
+    //   game.all(`${company.name}-stock`).appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_Wabash}/> ) });
+    // });
+
     game.all('Wabash-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_Wabash}/> ) });
+    game.all('Wabash-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_Wabash}/> ) });
+    game.all('Wabash-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_Wabash}/> ) });
     game.all('PRR-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_PRR}/> ) });
+    game.all('PRR-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_PRR}/> ) });
+    game.all('PRR-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_PRR}/> ) });
     game.all('BandO-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_BandO}/> ) });
+    game.all('BandO-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_BandO}/> ) });
+    game.all('BandO-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_BandO}/> ) });
     game.all('NYC-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_NYC}/> ) });
+    game.all('NYC-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_NYC}/> ) });
+    game.all('NYC-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_NYC}/> ) });
     game.all('CandO-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_CandO}/> ) });
+    game.all('CandO-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_CandO}/> ) });
+    game.all('CandO-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_CandO}/> ) });
     game.all('Wabash-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_Wabash}/> ) });
     game.all('PRR-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_PRR}/> ) });
     game.all('BandO-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_BandO}/> ) });
@@ -241,7 +269,7 @@ render(setup, {
     const charterHeight = 20;
     const charterGap = 10;
     ChicagoExpressSetup.railwayCompanies.slice(1).forEach((company, index) => {
-      game.layout(company.id, { area: { left: 80, top: 20 + (index * charterHeight), width: 25, height: charterHeight }});
+      game.layout(company.id, { area: { left: 81, top: 20 + (index * charterHeight), width: 19, height: charterHeight }});
       game.all(company.id).layout("trains", { area: { left:0, top: 0, width: 45, height: 100 }});
       game.all(company.id).layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
       game.all(company.id).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
@@ -287,5 +315,26 @@ render(setup, {
     game.all("stocks").layout(Stock, { rows: {max: 1}, offsetColumn: {x: 15, y: 15}, direction: 'ltr', });
     game.all("trains-space").layout(Train, { rows: {max: 1}, offsetColumn: {x: 15, y: 15}, direction: 'ltr', size: { width: 50, height: 50 }});
     game.all("house-space").layout(House, { size: { width: 50, height: 50 } });
+
+    // define the layout for the income track
+    const incomeTrackCellWidth = 3.21;
+    const incomeTrackCellHeight = 4.85;
+    const incomeTrackCellFrameWidth = 0.13;
+    const incomeTrackCellFrameHeight = 0.15;
+    game.all(Board).layout('income-track-0', { area: { left: 16.7, top: 94.1, width: 2.52, height: 2.42 } });
+    game.all(Board).layout('income-track-horizontal', { area: { left: 21.4, top: 94.1, width: 75.58, height: 2.42 } });
+    for (let i = 1; i <= ChicagoExpressSetup.incomeTrackHorizonalLength; ++i) {
+      game.all('income-track-horizontal').layout(`income-track-${i}`, { area: { left: (i-1) * (incomeTrackCellFrameWidth + incomeTrackCellWidth), top: 0, width: incomeTrackCellWidth, height: 100 } });
+    }
+    game.all(Board).layout('income-track-vertical', { area: { left: 94.6, top: 41.9, width: 2.42, height: 52 } });
+    for (let i = ChicagoExpressSetup.incomeTrackHorizonalLength + ChicagoExpressSetup.incomeTrackVerticalLength; i > ChicagoExpressSetup.incomeTrackHorizonalLength; --i) {
+      game.all('income-track-vertical').layout(`income-track-${i}`, { area: {
+        left: 0,
+        top: (ChicagoExpressSetup.incomeTrackHorizonalLength + ChicagoExpressSetup.incomeTrackVerticalLength - i) * (incomeTrackCellFrameHeight + incomeTrackCellHeight),
+        width: 100,
+        height: incomeTrackCellHeight
+      } });
+    }
+    game.all(Board).layout('plus-50-game-tokens', { area: { left: 21.4, top: 97, width: 10, height: 4 } });
   }
 });

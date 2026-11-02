@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25mm" height="22mm" viewBox="0 0 250 220">
+  <title>Green wooden income counter</title>
+  <desc>A flat, thick green wooden cylindrical game counter shown in perspective, without a shadow.</desc>
+  <defs>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2866c7"/>
+      <stop offset="1" stop-color="#173b83"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#4b91ed"/>
+      <stop offset="0.55" stop-color="#3478d5"/>
+      <stop offset="1" stop-color="#2053a6"/>
+    </linearGradient>
+  </defs>
+  <!-- Cylindrical side wall -->
+  <path d="M34 70
+           C34 54 75 41 125 41
+           C175 41 216 54 216 70
+           L216 131
+           C216 147 175 160 125 160
+           C75 160 34 147 34 131 Z"
+        fill="url(#side)" stroke="#111111" stroke-width="2.5"/>
+  <!-- Bottom edge -->
+  <path d="M34 131 C34 147 75 160 125 160 C175 160 216 147 216 131"
+        fill="none" stroke="#111111" stroke-width="2.5"/>
+  <!-- Top face -->
+  <ellipse cx="125" cy="69" rx="91" ry="30"
+           fill="url(#top)" stroke="#111111" stroke-width="2.5"/>
+</svg>
