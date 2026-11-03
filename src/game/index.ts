@@ -72,20 +72,8 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   }
 
   getStartField(companyId: string) : HexagonalField {
-    var startField = undefined;
-    switch (companyId)
-    {
-      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id:
-        startField = this.game.first('hex-3-3')! as HexagonalField; break;
-      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.PRR].id:
-        startField = this.game.first('hex-5-17') as HexagonalField; break;
-      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.BandO].id:
-        startField = this.game.first('hex-7-16') as HexagonalField; break;
-      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.NYC].id:
-        startField = this.game.first('hex-3-18') as HexagonalField; break;
-      case ChicagoExpressSetup.railwayCompanies[RailwayCompanies.CandO].id:
-        startField = this.game.first('hex-9-16') as HexagonalField; break;
-    }
+    var startFieldIndexes = ChicagoExpressSetup.startFieldsMap.get(companyId);
+    var startField = this.game.first(`hex-${startFieldIndexes![0]}-${startFieldIndexes![1]}`)! as HexagonalField;
     return startField!;
   }
 

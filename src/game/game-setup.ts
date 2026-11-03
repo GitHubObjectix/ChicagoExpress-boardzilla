@@ -27,6 +27,131 @@ class RC {
   initialIncome: number = 0;
 }
 
+// a smaller configuration for server testing
+// export class ChicagoExpressSetup {
+//   static readonly railwayCompanies: RC[] = [
+//     {id: "Wabash", name: "Wabash Railroad Company", trains: 11, stocks: 2, initialBid: 0, initialIncome: 1},
+//     {id: "PRR", name: "The Pennsylvania Railroad Company", trains: 20, stocks: 3, initialBid: 7, initialIncome: 7},
+//     {id: "BandO", name: "Baltimore & Ohio", trains: 22, stocks: 4, initialBid: 6, initialIncome: 6},
+//     {id: "NYC", name: "New York Central", trains: 24, stocks: 5, initialBid: 5, initialIncome: 8},
+//     {id: "CandO", name: "Chesapeake & Ohio", trains: 26, stocks: 6, initialBid: 8, initialIncome: 5},
+//   ]
+//   static readonly houses: number = 20;
+//   static readonly incomeTrackHorizonalLength: number = 30;
+//   static readonly incomeTrackVerticalLength: number = 20;
+
+//   static readonly columnConfiguration: [number, number][] = [
+//     [2, 4],
+//     [2, 6],
+//     [0, 7],
+//     [0, 7],
+//     [0, 8],
+//     [1, 8],
+//     [2, 9],
+//   ]
+
+//   // configures cost and incomes per field in each row, list only existing fields as per columnConfiguration
+//   // 1st number => cost
+//   // 2nd number => train income
+//   // 3rd number => development income
+//   static readonly columnCostAndIncomeConfiguration: [number, number, number][][] = [
+//     [[-3, 7, 0], [-1, 0, 0], [-1, 0, 0]], // column 0
+//     [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 2, 2], [-1, 0, 0]],
+//     [[-1, 0, 0], [-1, 0, 0], [-2, 1, 2], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0]],
+//     [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 1, 2], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-2, 2, 2]],
+//     [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0]],
+//     [[-2, 1, 1], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 1, 1], [-1, 0, 0], [-1, 0, 0], [-2, 2, 1]],
+//     [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-2, 0, 0], [-3, 1, 2]],
+//   ]
+
+//   public static getCostAndIncomeConfiguration(rowIndex: number, columnIndex: number) {
+//     return this.columnCostAndIncomeConfiguration[columnIndex][rowIndex - this.columnConfiguration[columnIndex][0]];
+//   }
+
+//   static readonly forests: [number, number][] = [
+//     [8, 6],
+//   ]
+
+//   static readonly Chicago: [number, number] = [2, 0];
+//   static readonly FortWayne: [number, number] = [3, 3];
+//   static readonly Detroit: [number, number] = [0, 4];
+//   static readonly Wheeling: [number, number] = [6, 6];
+//   static readonly Pittsburgh: [number, number] = [6, 6];
+
+//   static readonly industrialCities: [number, number][] = [
+//     ChicagoExpressSetup.Detroit, ChicagoExpressSetup.Wheeling, ChicagoExpressSetup.Pittsburgh
+//   ]
+//   static readonly industrialCityNames : string[] = [
+//     'detroit', 'wheeling', 'pittsburgh'
+//   ]
+//   static readonly industrialCityTrackCells : number[][] = [
+//     [1, 2, 3, 4, 5, 6, 7, 8],
+//     [3, 4, 5, 6],
+//     [4, 6, 8]
+//   ]
+
+//   static readonly cities: [number, number][] = [
+//     [2, 0], [5, 1], [2, 2], [3, 3], [7, 3], [1, 5], [5, 5], [8, 5],
+//   ]
+
+//   static readonly mountains: [number, number][] = [
+//     [9, 6]
+//   ]
+
+//   static readonly Wabash_StartField: [number, number] = [3, 3];
+//   static readonly PRR_StartField: [number, number] = [5, 3];
+//   static readonly BandO_StartField: [number, number] = [7, 6];
+//   static readonly NYC_StartField: [number, number] = [3, 6];
+//   static readonly CandO_StartField: [number, number] = [8, 4];
+
+//   static readonly startFields: [number, number][] = [
+//     ChicagoExpressSetup.PRR_StartField, ChicagoExpressSetup.BandO_StartField, ChicagoExpressSetup.NYC_StartField, ChicagoExpressSetup.CandO_StartField
+//   ];
+//   static readonly startFieldsMap: Map<string, [number, number]> = new Map([
+//     [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id, ChicagoExpressSetup.Wabash_StartField],
+//     [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.PRR].id, ChicagoExpressSetup.PRR_StartField],
+//     [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.BandO].id, ChicagoExpressSetup.BandO_StartField],
+//     [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.NYC].id, ChicagoExpressSetup.NYC_StartField],
+//     [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.CandO].id, ChicagoExpressSetup.CandO_StartField],
+//   ]);
+
+//   public static fieldIsForest(rowIndex: number, columnIndex: number) {
+//     return ChicagoExpressSetup.forests.some(([a, b]) => a == rowIndex && b == columnIndex);
+//   }
+
+//   public static fieldIsIndustry(rowIndex: number, columnIndex: number) {
+//     return ChicagoExpressSetup.industrialCities.some(([a, b]) => a == rowIndex && b == columnIndex);
+//   }
+
+//   public static fieldIsCity(rowIndex: number, columnIndex: number) {
+//     return ChicagoExpressSetup.cities.some(([a, b]) => a == rowIndex && b == columnIndex);
+//   }
+
+//   public static fieldIsMountain(rowIndex: number, columnIndex: number) {
+//     return ChicagoExpressSetup.mountains.some(([a, b]) => a == rowIndex && b == columnIndex);
+//   }
+
+//   public static fieldIsStartField(rowIndex: number, columnIndex: number) {
+//     return ChicagoExpressSetup.startFields.some(([a, b]) => a == rowIndex && b == columnIndex);
+//   }
+
+//   public static fieldCanContainHouse(rowIndex: number, columnIndex: number) {
+//     return (
+//       ChicagoExpressSetup.fieldIsForest(rowIndex, columnIndex) ||
+//       ChicagoExpressSetup.fieldIsCity(rowIndex, columnIndex) ||
+//       ChicagoExpressSetup.fieldIsMountain(rowIndex, columnIndex)
+//     );
+//   }
+
+//   public static fieldExists(rowIndex: number, columnIndex: number) {
+//     var fieldExists = false;
+//     if (columnIndex >= 0 && columnIndex < this.columnConfiguration.length) {
+//       fieldExists = rowIndex >= this.columnConfiguration[columnIndex][0] && rowIndex <= this.columnConfiguration[columnIndex][1]
+//     }
+//     return fieldExists;
+//   }
+// }
+
 export class ChicagoExpressSetup {
   static readonly railwayCompanies: RC[] = [
     {id: "Wabash", name: "Wabash Railroad Company", trains: 11, stocks: 2, initialBid: 0, initialIncome: 1},
@@ -137,9 +262,22 @@ export class ChicagoExpressSetup {
     [4, 13]
   ]
 
+  static readonly Wabash_StartField: [number, number] = [3, 3];
+  static readonly PRR_StartField: [number, number] = [5, 17];
+  static readonly BandO_StartField: [number, number] = [7, 16];
+  static readonly NYC_StartField: [number, number] = [3, 18];
+  static readonly CandO_StartField: [number, number] = [9, 16];
+
   static readonly startFields: [number, number][] = [
-    [3, 3], [5, 17], [7, 16], [3, 18], [9, 16]
-  ]
+    ChicagoExpressSetup.PRR_StartField, ChicagoExpressSetup.BandO_StartField, ChicagoExpressSetup.NYC_StartField, ChicagoExpressSetup.CandO_StartField
+  ];
+  static readonly startFieldsMap: Map<string, [number, number]> = new Map([
+    [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id, ChicagoExpressSetup.Wabash_StartField],
+    [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.PRR].id, ChicagoExpressSetup.PRR_StartField],
+    [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.BandO].id, ChicagoExpressSetup.BandO_StartField],
+    [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.NYC].id, ChicagoExpressSetup.NYC_StartField],
+    [ChicagoExpressSetup.railwayCompanies[RailwayCompanies.CandO].id, ChicagoExpressSetup.CandO_StartField],
+  ]);
 
   public static fieldIsForest(rowIndex: number, columnIndex: number) {
     return ChicagoExpressSetup.forests.some(([a, b]) => a == rowIndex && b == columnIndex);
