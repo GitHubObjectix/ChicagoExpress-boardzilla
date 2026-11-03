@@ -52,6 +52,20 @@ import logo_Wabash from './assets/Wabash-logo.jpg'
 import image_House from './pieces/house.svg'
 import image_Banknote from './pieces/dollar-note.jpg'
 
+const companyImages: Record<string, {
+  train: string;
+  counter: string;
+  logo: string;
+  stock: string;
+}> = {
+  Wabash: { train: trainImage_Wabash, counter: counterImage_Wabash, logo: logo_Wabash, stock: stockImage_Wabash },
+  PRR: { train: trainImage_PRR, counter: counterImage_PRR, logo: logo_PRR, stock: stockImage_PRR },
+  BandO: { train: trainImage_BandO, counter: counterImage_BandO, logo: logo_BandO, stock: stockImage_BandO },
+  NYC: { train: trainImage_NYC, counter: counterImage_NYC, logo: logo_NYC, stock: stockImage_NYC },
+  CandO: { train: trainImage_CandO, counter: counterImage_CandO, logo: logo_CandO, stock: stockImage_CandO },
+};
+
+
 render(setup, {
   boardSizes: [
     {
@@ -204,34 +218,15 @@ render(setup, {
     wabashSpace.layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
     wabashSpace.layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
 
-    // TODO! optimize layout code for railway companies
-    // game.railwayCompanies.forEach((company) => {
-    //   game.all(`${company.name}-train`).appearance({ aspectRatio: 1, render: () => ( <img src={"trainImage_" + ${company.name}}/> ) });
-    //   game.all(`${company.name}-counter`).appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_Wabash}/> ) });
-    //   game.all(`${company.name}-logo`).appearance({ aspectRatio: 1, render: () => ( <img src={logo_Wabash}/> ) });
-    //   game.all(`${company.name}-stock`).appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_Wabash}/> ) });
-    // });
+    game.railwayCompanies.forEach((company) => {
+      const images = companyImages[company.name];
 
-    game.all('Wabash-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_Wabash}/> ) });
-    game.all('Wabash-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_Wabash}/> ) });
-    game.all('Wabash-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_Wabash}/> ) });
-    game.all('PRR-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_PRR}/> ) });
-    game.all('PRR-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_PRR}/> ) });
-    game.all('PRR-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_PRR}/> ) });
-    game.all('BandO-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_BandO}/> ) });
-    game.all('BandO-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_BandO}/> ) });
-    game.all('BandO-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_BandO}/> ) });
-    game.all('NYC-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_NYC}/> ) });
-    game.all('NYC-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_NYC}/> ) });
-    game.all('NYC-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_NYC}/> ) });
-    game.all('CandO-train').appearance({ aspectRatio: 1, render: () => ( <img src={trainImage_CandO}/> ) });
-    game.all('CandO-counter').appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_CandO}/> ) });
-    game.all('CandO-logo').appearance({ aspectRatio: 1, render: () => ( <img src={logo_CandO}/> ) });
-    game.all('Wabash-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_Wabash}/> ) });
-    game.all('PRR-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_PRR}/> ) });
-    game.all('BandO-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_BandO}/> ) });
-    game.all('NYC-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_NYC}/> ) });
-    game.all('CandO-stock').appearance({ aspectRatio: 1, render: () => ( <img src={stockImage_CandO}/> ) });
+      game.all(`${company.name}-train`).appearance({aspectRatio: 1, render: () => <img src={images.train} />, });
+      game.all(`${company.name}-counter`).appearance({ aspectRatio: 1, render: () => <img src={images.counter} />,});
+      game.all(`${company.name}-logo`).appearance({ aspectRatio: 1, render: () => <img src={images.logo} />, });
+      game.all(`${company.name}-stock`).appearance({ aspectRatio: 1, render: () => <img src={images.stock} />, });
+    });
+
     game.all('house').appearance({ aspectRatio: 1, render: () => ( <img src={image_House}/> ) });
     game.all(Banknote).appearance({ aspectRatio: 1, render: () => ( <img src={image_Banknote}/> ) });
 
