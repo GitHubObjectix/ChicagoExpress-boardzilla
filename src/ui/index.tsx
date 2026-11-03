@@ -112,6 +112,8 @@ render(setup, {
     game.disableDefaultAppearance();
     // game.showLayoutBoundingBoxes();
 
+    const board = game.first(Board, 'board')!;
+
     const bank = game.first(Bank, 'bank')!;
     const bankAccount = bank.first('account')!;
     game.layout(bank.name, { area: { left: 81, top: 0, width: 19, height: 20 } });
@@ -140,8 +142,8 @@ render(setup, {
     });
     bank.layout(Banknote, { rows: { min: 1, max: 2 }, columns: 1, });
 
-    game.all(Board).layout('house-pile', { area: { left: 21.5, top: 68.2, width: 18.7, height: 11.17 }});
-    game.all('house-pile').layout(House, { offsetRow: {x: -50, y: 100}, offsetColumn: 100, haphazardly: 2, });
+    board.layout('house-pile', { area: { left: 21.5, top: 68.2, width: 18.7, height: 11.17 }});
+    game.first('house-pile')!.layout(House, { offsetRow: {x: -50, y: 100}, offsetColumn: 100, haphazardly: 2, });
 
     const columnLeft: number[] = [ 2.8, 7.75 ];
     const columnTop: number[] = [ 4.1, 7.0 ];
@@ -179,7 +181,7 @@ render(setup, {
     const industrialCityTrackCellFrameWidth = 1.8;
     const industrialCityTrackCellFrameHeight = 2.2;
     game.layout(Board, { area: { left: 20, top: 0, width: 58, height: 100, }, });
-    game.all(Board).layout("industrial-city-track", { area: { left: 31.6, top: 80.5, width: 23.24, height: 11.95, } });
+    board.layout("industrial-city-track", { area: { left: 31.6, top: 80.5, width: 23.24, height: 11.95, } });
     ChicagoExpressSetup.industrialCities.forEach((industrialCity, i) => {
       ChicagoExpressSetup.industrialCityTrackCells[i].forEach((cellIndex, j) => {
         const k = ChicagoExpressSetup.industrialCityTrackCells[i][j] - 1;
@@ -191,15 +193,16 @@ render(setup, {
       })
     });
 
-    game.all(Board).layout(AuctionGauge, { area: { left: 4.2, top: 52.6, width: 12.04, height: 12.04, } })
-    game.all(Board).layout(DevelopmentGauge, { area: { left: 4.2, top: 67.9, width: 12.04, height: 12.04, } })
-    game.all(Board).layout(RouteConstructionGauge, { area: { left: 4.2, top: 83.1, width: 12.04, height: 12.04, } })
+    board.layout(AuctionGauge, { area: { left: 4.2, top: 52.6, width: 12.04, height: 12.04, } })
+    board.layout(DevelopmentGauge, { area: { left: 4.2, top: 67.9, width: 12.04, height: 12.04, } })
+    board.layout(RouteConstructionGauge, { area: { left: 4.2, top: 83.1, width: 12.04, height: 12.04, } })
 
     const wabashId = ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id;
-    game.all(Board).layout(wabashId, { area: { left: 62.1, top: 71.4, width: 29.76, height: 19.97, } });
-    game.all(wabashId).layout("trains", { area: { left:0, top: 0, width: 45, height: 100 }});
-    game.all(wabashId).layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
-    game.all(wabashId).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
+    board.layout(wabashId, { area: { left: 62.1, top: 71.4, width: 29.76, height: 19.97, } });
+    const wabashSpace = game.first(wabashId)!;
+    wabashSpace.layout("trains", { area: { left:0, top: 0, width: 45, height: 100 }});
+    wabashSpace.layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
+    wabashSpace.layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
 
     // TODO! optimize layout code for railway companies
     // game.railwayCompanies.forEach((company) => {
@@ -338,12 +341,12 @@ render(setup, {
     const incomeTrackCellHeight = 4.85;
     const incomeTrackCellFrameWidth = 0.13;
     const incomeTrackCellFrameHeight = 0.15;
-    game.all(Board).layout('income-track-0', { area: { left: 16.7, top: 94.1, width: 2.52, height: 2.42 } });
-    game.all(Board).layout('income-track-horizontal', { area: { left: 21.4, top: 94.1, width: 75.58, height: 2.42 } });
+    board.layout('income-track-0', { area: { left: 16.7, top: 94.1, width: 2.52, height: 2.42 } });
+    board.layout('income-track-horizontal', { area: { left: 21.4, top: 94.1, width: 75.58, height: 2.42 } });
     for (let i = 1; i <= ChicagoExpressSetup.incomeTrackHorizonalLength; ++i) {
       game.all('income-track-horizontal').layout(`income-track-${i}`, { area: { left: (i-1) * (incomeTrackCellFrameWidth + incomeTrackCellWidth), top: 0, width: incomeTrackCellWidth, height: 100 } });
     }
-    game.all(Board).layout('income-track-vertical', { area: { left: 94.6, top: 41.9, width: 2.42, height: 52 } });
+    board.layout('income-track-vertical', { area: { left: 94.6, top: 41.9, width: 2.42, height: 52 } });
     for (let i = ChicagoExpressSetup.incomeTrackHorizonalLength + ChicagoExpressSetup.incomeTrackVerticalLength; i > ChicagoExpressSetup.incomeTrackHorizonalLength; --i) {
       game.all('income-track-vertical').layout(`income-track-${i}`, { area: {
         left: 0,
@@ -352,6 +355,6 @@ render(setup, {
         height: incomeTrackCellHeight
       } });
     }
-    game.all(Board).layout('plus-50-game-tokens', { area: { left: 21.4, top: 97, width: 10, height: 4 } });
+    board.layout('plus-50-game-tokens', { area: { left: 21.4, top: 97, width: 10, height: 4 } });
   }
 });
