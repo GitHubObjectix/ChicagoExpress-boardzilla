@@ -305,6 +305,20 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
       stock.putInto(toSpace.first('stocks')!);
     }
   }
+
+  increaseIncome(amount: number, company: RailwayCompany) {
+    var incomeOnIncomeTrack = company.income > 50 ? company.income - 50 : company.income;
+    const incomeCounter = this.first(`income-track-${incomeOnIncomeTrack}`)!.first(`${company.name}-counter`) as Counter;
+
+    company.income += amount;
+    if (company.income > 50 && this.pile.first(Piece, `${company.name}-logo`) != undefined) {
+      const logo = this.pile.first(Piece, `${company.name}-logo`) as Piece<ChicagoExpressGame>;
+      logo.putInto(this.first('plus-50-game-tokens')!);
+    }
+
+    incomeOnIncomeTrack = company.income > 50 ? company.income - 50 : company.income;
+    incomeCounter.putInto(this.first(`income-track-${incomeOnIncomeTrack}`)!);
+  }
 }
 
 export class RailwayCompany extends Space<ChicagoExpressGame> {
@@ -318,13 +332,16 @@ export class RailwayCompany extends Space<ChicagoExpressGame> {
 
   public isSelectableForAuction(): boolean {
     // Wabash is selectable only if there is at least 1 train in Chicago
-    var isOpened = true;
+    var isOpened = false;
 
     if (ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id == this.name) {
       var field = this.game.first(`hex-${ChicagoExpressSetup.FortWayne[0]}-${ChicagoExpressSetup.FortWayne[1]}`);
       if (field != undefined && field.first('trains-space')!.has(Piece, `${ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id}-train`))
         isOpened = true;
+    } else {
+      isOpened = true;
     }
+
 
     return isOpened && this.hasStocks();
   }
@@ -483,7 +500,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   game.railwayCompanies.forEach((company) => {
     const incomeTrackCell = board.first(`income-track-${company.income}`)!;
     incomeTrackCell.createMany(1, Counter, `${company.name}-counter`);
-    tokenSpace.createMany(1, Piece, `${company.name}-logo`);
+    game.pile.createMany(1, Piece, `${company.name}-logo`);
   });
 
 
@@ -620,7 +637,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                     // incomes of all affected railway companies increases
                                     const train = game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
                                       const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
-                                      company.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped];
+                                      game.increaseIncome(ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped], company);
                                     });
                                   } else
                                   if (ChicagoExpressSetup.fieldIsForest(game.selectedField!.row, game.selectedField!.column)) {
@@ -647,7 +664,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                         // income of all affected railway company increases
                                         const train = game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
                                           const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
-                                          company.income += ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index+1] - ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index];
+                                          game.increaseIncome(ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index+1] - ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index], company);
                                         });
                                         break;
                                       }
@@ -697,9 +714,11 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                             -game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).length * ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.ConstructionCost],
                                             game.selectedCompany!,
                                             bank);
-                                          game.selectedCompany!.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.Income];
+
+                                          var incomeIncrease = ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.Income];
                                           if (game.selectedField!.has(Piece, 'house'))
-                                            game.selectedCompany!.income += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped];
+                                            incomeIncrease += ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped];
+                                          game.increaseIncome(incomeIncrease, game.selectedCompany!);
                                         },
                                         () => {
                                           if (game.selectedField!.row == ChicagoExpressSetup.Chicago[0] && game.selectedField!.column == ChicagoExpressSetup.Chicago[1]) {
@@ -742,8 +761,9 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                     // open Wabash line by putting the first train into Fort Wayne field
                     const train = companyWabash.first(Space, 'trains')!.first(Train);
                     train!.putInto(hexFieldFortWayne!.first('trains-space')!);
+
                     // start income of Wabash depends on whether Fort Wayne is developed or not
-                    companyWabash.income = hexFieldFortWayne!.first('house-space')!.has(Piece, 'house') ? 3 : 1;
+                    game.increaseIncome(hexFieldFortWayne!.first('house-space')!.has(Piece, 'house') ? 3 : 1, companyWabash);
                     companyWabash.initialBid = companyWabash.income;
 
                     Do.subflow('action-auction', { company: companyWabash });
@@ -774,7 +794,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                       const detroitField = game.first(HexagonalField, `hex-${ChicagoExpressSetup.Detroit[0]}-${ChicagoExpressSetup.Detroit[1]}`)!;
                       const train = detroitField.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
                         const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
-                        company.income += ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit][index + 1] - ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit][index];
+                        game.increaseIncome(ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit][index + 1] - ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit][index], company);
                       });
                       break;
                     }

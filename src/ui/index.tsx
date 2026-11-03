@@ -110,7 +110,7 @@ render(setup, {
   },
   layout: (game, player, boardSize) => {
     game.disableDefaultAppearance();
-    game.showLayoutBoundingBoxes();
+    // game.showLayoutBoundingBoxes();
 
     const bank = game.first(Bank, 'bank')!;
     game.layout(bank.name, { area: { left: 81, top: 0, width: 19, height: 20 } });
@@ -194,6 +194,7 @@ render(setup, {
     game.all(wabashId).layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
     game.all(wabashId).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
 
+    // TODO! optimize layout code for railway companies
     // game.railwayCompanies.forEach((company) => {
     //   game.all(`${company.name}-train`).appearance({ aspectRatio: 1, render: () => ( <img src={"trainImage_" + ${company.name}}/> ) });
     //   game.all(`${company.name}-counter`).appearance({ aspectRatio: 1, render: () => ( <img src={counterImage_Wabash}/> ) });
