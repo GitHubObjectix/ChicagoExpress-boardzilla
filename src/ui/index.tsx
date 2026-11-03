@@ -113,6 +113,7 @@ render(setup, {
     // game.showLayoutBoundingBoxes();
 
     const bank = game.first(Bank, 'bank')!;
+    const bankAccount = bank.first('account')!;
     game.layout(bank.name, { area: { left: 81, top: 0, width: 19, height: 20 } });
     bank.layout('account', { area: { left: 5, top: 30, width: 90, height: 60 } });
     bank.appearance({
@@ -123,10 +124,16 @@ render(setup, {
               <div className="player-bank__name">
                 Bank
               </div>
-              <div className="bank-panel__cash">
-                ${bank.all('banknote').length}
-              </div>
             </div>
+          </div>
+        );
+      }
+    });
+    bankAccount.appearance({
+      render: (account) => {
+        return (
+          <div className="bank-account">
+            ${bankAccount.all('banknote').length}
           </div>
         );
       }
@@ -268,12 +275,24 @@ render(setup, {
 
     // position the railway company charters
     const charterHeight = 20;
-    const charterGap = 10;
+    const charterGap = 0;
     ChicagoExpressSetup.railwayCompanies.slice(1).forEach((company, index) => {
-      game.layout(company.id, { area: { left: 81, top: 20 + (index * charterHeight), width: 19, height: charterHeight }});
-      game.all(company.id).layout("trains", { area: { left:0, top: 0, width: 45, height: 100 }});
-      game.all(company.id).layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
-      game.all(company.id).layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
+      const companySpace = game.all(company.id);
+      game.layout(company.id, { area: { left: 81, top: 20 + (index * charterHeight + charterGap), width: 19, height: charterHeight }});
+      companySpace.layout("trains", { area: { left: 4.5, top: 10, width: 40, height: 80 }});
+      const companyAccount = companySpace.first("account")!;
+      companySpace.layout("account", { area: { left:45, top: 10, width: 50, height: 35 }});
+      companySpace.layout("stocks", { area: { left:45, top: 45, width: 50, height: 45 }});
+
+      companyAccount.appearance({
+        render: (account) => {
+          return (
+            <div className="company-account">
+              ${account.all('banknote').length}
+            </div>
+          );
+        }
+      });
     });
 
     ChicagoExpressSetup.railwayCompanies.forEach((company, index) => {
@@ -282,9 +301,6 @@ render(setup, {
           const trainCompany = company as RailwayCompany;
           return (
             <div className="company-panel__header">
-              <div className="company-panel__cash">
-                ${trainCompany.getBalance()}
-              </div>
               <div className={`company-panel ${game.getSelectableCompanies().includes(trainCompany) && game.gameState == GameStates.SelectCompany ? "highlight" : ""}`}>
               </div>
             </div>

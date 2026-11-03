@@ -66,25 +66,6 @@
   font-size: 0.9em;
 }
 
-.bank {
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  padding: 0.65em;
-  border: 0.12em solid #8b7656;
-  border-radius: 0.5em;
-  background: #f5eedf;
-  color: #28251f;
-  font-family: sans-serif;
-  font-size: 0.9em;
-  visibility: visible;
-}
-
-.deposit {
-  visibility: visible;
-}
-
-
 .player-panel__header {
   display: flex;
   align-items: center;
@@ -105,6 +86,41 @@
   white-space: nowrap;
 }
 
+.bank-panel {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0.65em;
+  border: 0.12em solid #8b7656;
+  border-radius: 0.5em;
+  background: #f5eedf;
+  color: #28251f;
+  font-family: sans-serif;
+  font-size: 0.9em;
+  visibility: visible;
+}
+
+.bank-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+  padding-bottom: 0.5em;
+  border-bottom: 0.1em solid #c8b99d;
+}
+
+.bank-account {
+  font-size: 1.15em;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.company-account {
+  font-size: 2.5em;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .industrial-city-track {
   box-sizing: border-box;
   width: 100%;
@@ -121,13 +137,10 @@
 
 .RailwayCompany {
   background-size: 100% 100%;
-  //background-position: center;
   background-repeat: no-repeat;
 }
 
 .HexagonalField {
-  // background-image: url("./assets/chicago-express-board.jpg");
-  // background-size: contain;
   visibility: visible;
   clip-path: polygon(
     25% 0%,
@@ -166,12 +179,6 @@
     opacity: 1;
   }
 }
-
-// .gauge-inner {
-//   position: relative;
-//   overflow: hidden;
-//   border-radius: 50%;
-// }
 
 .gauge-pointer {
   position: absolute;
