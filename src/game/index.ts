@@ -520,6 +520,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       prompt: 'Done'
     }).do(() => {
       game.selectedActionGauge = undefined;
+      game.selectedCompany = undefined;
       game.selectedField = undefined;
     }),
     selectAction: player => action({
@@ -582,64 +583,66 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
           name: 'playerAtTurn',
           do: [
             () => { game.gameState = GameStates.SelectAction },
-            playerActions({ actions: ["selectAction", "skip"] }),
+            playerActions({ actions: ["selectAction"] }),
             () => ( game.gameState = GameStates.None ),
-            ifElse({
-              name: 'checkIfActionSelected',
-              if: ({}) => { return game.selectedActionGauge != undefined },
-              do: [
-                () => { game.selectedActionGauge!.makeAction(); },
-                switchCase({
-                  name: 'actionSwitch',
-                  switch: () => game.selectedActionGauge!.name,
-                  cases: [
-                    {
-                      eq: 'auction-gauge', do: [
-                        () => { game.selectableCompanies = game.getSelectableCompaniesForAuction(); game.gameState = GameStates.SelectCompany },
-                        playerActions({ actions: ["selectCompany"] }),
+            () => { game.selectedActionGauge!.makeAction(); },
+            switchCase({
+              name: 'actionSwitch',
+              switch: () => game.selectedActionGauge!.name,
+              cases: [
+                {
+                  eq: 'auction-gauge', do: [
+                    () => { game.selectableCompanies = game.getSelectableCompaniesForAuction(); game.gameState = GameStates.SelectCompany },
+                    playerActions({ actions: ["selectCompany", "skip"] }),
+                    ifElse({
+                      name: 'checkIfCompanySelected',
+                      if: ({ }) => { return game.selectedCompany != undefined },
+                      do: [
                         () => { Do.subflow('action-auction', { company: game.selectedCompany }); }
                       ]
+                    })
+                  ]
+                },
+                {
+                  eq: 'development-gauge', do: [
+                    () => {
+                      // determine fields that can be developed still
+                      game.selectableFields = game.getSelectableFieldsForDevelopment();
+                      game.gameState = GameStates.SelectFields;
                     },
-                    {
-                      eq: 'development-gauge', do: [
-                        () => {
-                          // determine fields that can be developed still
-                          game.selectableFields = game.getSelectableFieldsForDevelopment();
-                          game.gameState = GameStates.SelectFields;
-                        },
+                    ifElse({
+                      name: 'checkIfFieldsAreSelectable',
+                      if: ({ }) => { return game.selectableFields.length > 0 },
+                      do: [
+                        playerActions({ actions: ["selectField", "skip"] }),
                         ifElse({
-                          name: 'checkIfFieldsAreSelectable',
-                          if: ({}) => { return game.selectableFields.length > 0 },
+                          name: 'checkIfFieldSelected',
+                          if: ({ }) => { return game.selectedField != undefined },
                           do: [
-                            playerActions({ actions: ["selectField", "skip"] }),
-                            ifElse({
-                              name: 'checkIfFieldSelected',
-                              if: ({ }) => { return game.selectedField != undefined },
-                              do: [
-                                () => {
-                                  if (ChicagoExpressSetup.fieldIsCity(game.selectedField!.row, game.selectedField!.column) ||
-                                      ChicagoExpressSetup.fieldIsMountain(game.selectedField!.row, game.selectedField!.column)) {
-                                    const house = game.first(Space, 'house-pile')!.first('house')! as House;
-                                    house.putInto(game.selectedField!.first('house-space')!);
+                            () => {
+                              if (ChicagoExpressSetup.fieldIsCity(game.selectedField!.row, game.selectedField!.column) ||
+                                ChicagoExpressSetup.fieldIsMountain(game.selectedField!.row, game.selectedField!.column)) {
+                                const house = game.first(Space, 'house-pile')!.first('house')! as House;
+                                house.putInto(game.selectedField!.first('house-space')!);
 
-                                    // incomes of all affected railway companies increases
-                                    const train = game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
-                                      const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
-                                      game.increaseIncome(ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped], company);
-                                    });
-                                  } else
-                                  if (ChicagoExpressSetup.fieldIsForest(game.selectedField!.row, game.selectedField!.column)) {
-                                    const house = game.first(Space, 'house-pile')!.first('house')! as House;
-                                    house.putInto(game.selectedField!.first('house-space')!);
+                                // incomes of all affected railway companies increases
+                                const train = game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
+                                  const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
+                                  game.increaseIncome(ChicagoExpressSetup.getCostAndIncomeConfiguration(game.selectedField!.row, game.selectedField!.column)[CostAndIncome.IncomeIfDeveloped], company);
+                                });
+                              } else
+                                if (ChicagoExpressSetup.fieldIsForest(game.selectedField!.row, game.selectedField!.column)) {
+                                  const house = game.first(Space, 'house-pile')!.first('house')! as House;
+                                  house.putInto(game.selectedField!.first('house-space')!);
 
-                                    // balance of affected railway company increases by $2
-                                    const train = game.selectedField!.first(Piece, (piece) => piece.name.endsWith('-train'))!;
-                                    const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
-                                    game.transferMoney(2, bank, company);
-                                  } else
+                                  // balance of affected railway company increases by $2
+                                  const train = game.selectedField!.first(Piece, (piece) => piece.name.endsWith('-train'))!;
+                                  const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
+                                  game.transferMoney(2, bank, company);
+                                } else
                                   if (ChicagoExpressSetup.fieldIsIndustry(game.selectedField!.row, game.selectedField!.column)) {
                                     const industrialCityIndex = ChicagoExpressSetup.industrialCities.findIndex((field) => field[0] == game.selectedField!.row && field[1] == game.selectedField!.column);
-                                    const cells = game.first('industrial-city-track')?.all(Space, (space) =>space.name.startsWith(`${ChicagoExpressSetup.industrialCityNames[industrialCityIndex]}-`));
+                                    const cells = game.first('industrial-city-track')?.all(Space, (space) => space.name.startsWith(`${ChicagoExpressSetup.industrialCityNames[industrialCityIndex]}-`));
 
                                     for (const [index, cell] of cells!.entries()) {
                                       const house = cell.first('house') as House;
@@ -652,33 +655,37 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                         // income of all affected railway company increases
                                         const train = game.selectedField!.all(Piece, (piece) => piece.name.endsWith('-train')).forEach((train) => {
                                           const company = game.first(RailwayCompany, train.name.split('-')[0]) as RailwayCompany;
-                                          game.increaseIncome(ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index+1] - ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index], company);
+                                          game.increaseIncome(ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index + 1] - ChicagoExpressSetup.industrialCityTrackCells[industrialCityIndex][index], company);
                                         });
                                         break;
                                       }
                                     }
                                   }
-                                }
-                              ],
-                              else: Do.break
-                            })
-                          ]
-                        }),
-                        () => { game.gameState = GameStates.None; }
+                            }
+                          ],
+                          else: Do.break
+                        })
                       ]
+                    }),
+                    () => { game.gameState = GameStates.None; }
+                  ]
+                },
+                {
+                  eq: 'route-construction-gauge', do: [
+                    () => {
+                      // determine those companies for which the current player own at least one stock
+                      game.selectableCompanies = game.getSelectableCompaniesForConstruction(game.players.current()!);
+                      game.gameState = GameStates.SelectCompany;
                     },
-                    {
-                      eq: 'route-construction-gauge', do: [
-                        () => {
-                          // determine those companies for which the current player own at least one stock
-                          game.selectableCompanies = game.getSelectableCompaniesForConstruction(game.players.current()!);
-                          game.gameState = GameStates.SelectCompany;
-                        },
+                    ifElse({
+                      name: 'checkIfCompaniesAreSelectable',
+                      if: ({ }) => { return game.selectableCompanies.length > 0 },
+                      do: [
+                        playerActions({ actions: ["selectCompany", "skip"] }),
                         ifElse({
-                          name: 'checkIfCompaniesAreSelectable',
-                          if: ({}) => { return game.selectableCompanies.length > 0 },
+                          name: 'checkIfCompanySelected',
+                          if: ({ }) => { return game.selectedCompany != undefined },
                           do: [
-                            playerActions({ actions: ["selectCompany"] }),
                             forLoop({
                               name: 'contruction-loop',
                               initial: 0,
@@ -688,12 +695,12 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                 () => { game.selectableFields = game.getSelectableFieldsForConstruction(game.selectedCompany!); game.gameState = GameStates.SelectFields; },
                                 ifElse({
                                   name: 'checkIfFieldsAreSelectable',
-                                  if: ({}) => { return game.selectableFields.length > 0 },
+                                  if: ({ }) => { return game.selectableFields.length > 0 },
                                   do: [
                                     playerActions({ actions: ["selectField", "skip"] }),
                                     ifElse({
                                       name: 'checkIfFieldSelected',
-                                      if: ({}) => { return game.selectedField != undefined },
+                                      if: ({ }) => { return game.selectedField != undefined },
                                       do: [
                                         () => {
                                           const train = game.selectedCompany!.first(Space, 'trains')!.first(Train);
@@ -710,7 +717,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                         },
                                         () => {
                                           if (game.selectedField!.row == ChicagoExpressSetup.Chicago[0] && game.selectedField!.column == ChicagoExpressSetup.Chicago[1]) {
-                                          //if (game.selectedField!.row == 4 && game.selectedField!.column == 14) {
+                                            //if (game.selectedField!.row == 4 && game.selectedField!.column == 14) {
                                             game.wasChicagoReached = true;
                                           }
                                         }
@@ -721,17 +728,17 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                                   else: Do.break
                                 })
                               ]
-                            }),
-                            () => { game.gameState = GameStates.None; }
+                            })
                           ]
-                        })
+                        }),
                       ]
-                    },
-                  ],
-                  default: () => { }
-                }),
-              ]
-            }),
+                    }),
+                    () => { game.gameState = GameStates.None; }
+                  ]
+                },
+              ],
+              default: () => { }
+            }), // end of switchCase
             ifElse({
               name: 'checkChicagoReached',
               if: ({}) => game.wasChicagoReached,
@@ -856,7 +863,8 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
       game.firstPlayerOfAuction = game.players.current();
     },
     ({ company }) => {
-      game.lastBid = Math.ceil( company.income / company.countStocksOutstanding() ) - 1;
+      // outstanding stocks are the ones already sold plus the one that is currently auctioned
+      game.lastBid = Math.ceil( company.income / ( company.countStocksOutstanding() + 1 ) ) - 1;
       game.players.forEach(player => { player.passedThisAuction = false; player.hasPlacedBid = false; });
     },
     // Execution: let each player bid or pass until only one player is left
