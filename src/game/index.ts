@@ -110,7 +110,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
       }
     });
 
-    console.log(`fields occupied by ${company} are ${fieldsOccupiedByCompany}`);
+    // console.log(`fields occupied by ${company} are ${fieldsOccupiedByCompany}`);
 
     return fieldsOccupiedByCompany;
   }
@@ -121,7 +121,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
     // check if fields has space for the train to put
     if (!hexField.first('trains-space')!.has(`${company.name}-train`)) {
       // hex field does not contain any train of respective company
-      console.log(`${hexField} has no train of company ${company}`);
+      // console.log(`${hexField} has no train of company ${company}`);
 
       if (ChicagoExpressSetup.fieldIsMountain(hexField.row, hexField.column) || ChicagoExpressSetup.fieldIsForest(hexField.row, hexField.column)) {
         // if hex field is mountain or forest there must be no other train
@@ -129,7 +129,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
       }
       else
       if (ChicagoExpressSetup.fieldIsStartField(hexField.row, hexField.column)) {
-        console.log(`${hexField} is start field`);
+        // console.log(`${hexField} is start field`);
         canPutTrainOnField = false;
       }
       else {
@@ -142,11 +142,11 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
       const presentTrains = 1 + hexField.first('trains-space')!.all(Piece, (piece) => piece.name.endsWith('-train')).length;
       const constructionCost = presentTrains * -ChicagoExpressSetup.getCostAndIncomeConfiguration(hexField.row, hexField.column)[CostAndIncome.ConstructionCost];
 
-      console.log(`on field ${hexField} are ${presentTrains-1} trains present which results in construction cost of ${constructionCost}`);
+      // console.log(`on field ${hexField} are ${presentTrains-1} trains present which results in construction cost of ${constructionCost}`);
       canPutTrainOnField = company.getBalance() >= constructionCost;
     }
 
-    console.log(`${company} can put train on ${hexField}: ${canPutTrainOnField}`);
+    //console.log(`${company} can put train on ${hexField}: ${canPutTrainOnField}`);
 
     return canPutTrainOnField;
   }
@@ -176,7 +176,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
       );
     }
     adjacentFields = adjacentFields.filter((field) => ChicagoExpressSetup.fieldExists(field[0], field[1]));
-    console.log(`adjacent fields of ${field} are ${adjacentFields}`);
+    // console.log(`adjacent fields of ${field} are ${adjacentFields}`);
     return adjacentFields;
   }
 
@@ -186,14 +186,14 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
     this.getFieldsOccupiedByCompany(company).forEach((field) => {
       selectableFields = selectableFields.concat(this.getAdjacentFields([field.row, field.column]).map((field) => this.game.first(`hex-${field[0]}-${field[1]}`) as HexagonalField ));
     });
-    console.log(`before unify: selectable fields for ${company} are ${selectableFields}`);
+    // console.log(`before unify: selectable fields for ${company} are ${selectableFields}`);
 
     selectableFields = [
       ...new Map(
         selectableFields.map((hexField) => [`${hexField.row},${hexField.column}`, hexField as HexagonalField])
       ).values(),
     ].filter((field) => this.canPutTrainOnField(company, field));
-    console.log(`after unify: selectable fields for ${company} are ${selectableFields}`);
+    // console.log(`after unify: selectable fields for ${company} are ${selectableFields}`);
 
     return selectableFields;
   }
@@ -222,11 +222,11 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
 
     var hexField = this.first(`hex-${ChicagoExpressSetup.Wheeling[0]}-${ChicagoExpressSetup.Wheeling[1]}`) as HexagonalField;
     if (hexField.has(Piece, (piece) => piece.name.endsWith('-train'))) {
-      console.log(`wheeling has a train`);
+      // console.log(`wheeling has a train`);
       const cells = this.first('industrial-city-track')?.all(Space, (space) => space.name.startsWith(`${ChicagoExpressSetup.industrialCityNames[IndustrialCities.Wheeling]}-`));
-      console.log(`cells size of ${cells?.length}`);
+      // console.log(`cells size of ${cells?.length}`);
       for (const [index, cell] of cells!.entries()) {
-        console.log(`testing ${index}`);
+        // console.log(`testing ${index}`);
         const house = cell.first('house') as unknown as House;
 
         if (house != undefined && index < ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Wheeling].length-1) {
@@ -238,11 +238,11 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
 
     var hexField = this.first(`hex-${ChicagoExpressSetup.Pittsburgh[0]}-${ChicagoExpressSetup.Pittsburgh[1]}`) as HexagonalField;
     if (hexField.has(Piece, (piece) => piece.name.endsWith('-train'))) {
-      console.log(`pittsburgh has a train`);
+      // console.log(`pittsburgh has a train`);
       const cells = this.first('industrial-city-track')?.all(Space, (space) => space.name.startsWith(`${ChicagoExpressSetup.industrialCityNames[IndustrialCities.Pittsburgh]}-`));
-      console.log(`cells size of ${cells?.length}`);
+      // console.log(`cells size of ${cells?.length}`);
       for (const [index, cell] of cells!.entries()) {
-        console.log(`testing ${index}`);
+        // console.log(`testing ${index}`);
         const house = cell.first('house') as House;
 
         if (house != undefined && index < ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Pittsburgh].length-1) {
@@ -271,7 +271,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
 
     const lastDetroitCell = this.game.first(`${ChicagoExpressSetup.industrialCityNames[IndustrialCities.Detroit]}-${ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit][ChicagoExpressSetup.industrialCityTrackCells[IndustrialCities.Detroit].length-1]}`);
 
-    console.log(`checking end condition, ${numCompaniesWithNoStocks} companies without stock, ${numCompaniesWithNoTrains} companies without trains, ${lessEqualThreeHouses}, ${lastDetroitCell?.has('house')}`);
+    // console.log(`checking end condition, ${numCompaniesWithNoStocks} companies without stock, ${numCompaniesWithNoTrains} companies without trains, ${lessEqualThreeHouses}, ${lastDetroitCell?.has('house')}`);
 
     return (numCompaniesWithNoStocks >=3 || numCompaniesWithNoTrains >= 3 || lessEqualThreeHouses || lastDetroitCell!.has('house'));
   }
@@ -744,13 +744,13 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
               if: ({}) => game.wasChicagoReached,
               do: [
                 () => {
-                  console.log('Chicago was reached, starting dividend phase');
+                  // console.log('Chicago was reached, starting dividend phase');
                   game.wasChicagoReached = false;
                   Do.subflow('dividend-phase');
 
                   const hexFieldFortWayne = game.first(`hex-${ChicagoExpressSetup.FortWayne[0]}-${ChicagoExpressSetup.FortWayne[1]}`) as HexagonalField;
                   if (!hexFieldFortWayne!.first('trains-space')!.has(Piece, (piece) => piece.name.endsWith(`${ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id}-train`))) {
-                    console.log('Wabash line is opening, putting first train into Fort Wayne field');
+                    // console.log('Wabash line is opening, putting first train into Fort Wayne field');
                     const companyWabash = game.railwayCompanies[RailwayCompanies.Wabash];
 
                     // open Wabash line by putting the first train into Fort Wayne field
