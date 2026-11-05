@@ -88,7 +88,7 @@ export class ChicagoExpressGame extends Game<ChicagoExpressGame, ChicagoExpressP
   getSelectableCompaniesForConstruction(player: ChicagoExpressPlayer) : RailwayCompany[] {
     var companies: RailwayCompany[] = [];
     this.railwayCompanies.forEach((company) => {
-      if (player.my('player-tableau')?.first('stocks')?.has(`${company.name}-stock`))
+      if (player.my('player-tableau')?.first('stocks')?.has(`${company.name}-stock`) && company.first(Space, 'trains')!.has(`${company.name}-train`))
         companies.push(company);
     });
     return companies;
@@ -701,7 +701,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                               name: 'contruction-loop',
                               initial: 0,
                               next: x => x + 1,
-                              while: x => x < 3,
+                              while: x => x < 3 && game.selectedCompany!.first(Space, 'trains')!.has(Piece, (piece) => piece.name.endsWith('-train')),
                               do: [
                                 () => { game.selectableFields = game.getSelectableFieldsForConstruction(game.selectedCompany!); game.gameState = GameStates.SelectFields; },
                                 ifElse({
