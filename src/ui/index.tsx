@@ -225,6 +225,7 @@ render(setup, {
     )
   },
   layout: (game, player, boardSize) => {
+    const isCurrentPlayer = game.players.current()?.id === player.id;
     game.disableDefaultAppearance();
     // game.showLayoutBoundingBoxes();
 
@@ -298,7 +299,7 @@ render(setup, {
         };
           return (
           <div
-            className={`hexagonal-field-inner ${game.gameState == GameStates.SelectFields && game.isFieldSelectable(hexField) ? "highlight" : ""}`}
+            className={`hexagonal-field-inner ${isCurrentPlayer && game.gameState == GameStates.SelectFields && game.isFieldSelectable(hexField) ? "highlight" : ""}`}
             onMouseEnter={() =>
               publishFieldInfo(hexField)
             }
@@ -409,7 +410,7 @@ render(setup, {
               <div className={`company-panel__cash${trainCompany.name === 'Wabash' ? ' company-panel__cash--wabash' : ''}`}>
                 ${trainCompany.first('account')?.all('banknote').length}
               </div>
-              <div className={`company-panel ${game.getSelectableCompanies().includes(trainCompany) && game.gameState == GameStates.SelectCompany ? "highlight" : ""}`}>
+              <div className={`company-panel ${isCurrentPlayer && game.getSelectableCompanies().includes(trainCompany) && game.gameState == GameStates.SelectCompany ? "highlight" : ""}`}>
               </div>
             </div>
           );
@@ -429,7 +430,7 @@ render(setup, {
               }}
               alt=""
             />
-            <div className={`gauge-inner ${gauge.isActionPossible() && game.gameState == GameStates.SelectAction ? "highlight" : ""}`}></div>
+            <div className={`gauge-inner ${isCurrentPlayer && gauge.isActionPossible() && game.gameState == GameStates.SelectAction ? "highlight" : ""}`}></div>
           </div>
         );
       }
