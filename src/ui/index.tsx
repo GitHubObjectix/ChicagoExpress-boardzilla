@@ -296,7 +296,7 @@ render(setup, {
         const publishFieldInfo = (detail: HexagonalField | null) => {
           window.dispatchEvent(new CustomEvent(FIELD_INFO_EVENT, { detail }));
         };
-        return (
+          return (
           <div
             className={`hexagonal-field-inner ${game.gameState == GameStates.SelectFields && game.isFieldSelectable(hexField) ? "highlight" : ""}`}
             onMouseEnter={() =>
@@ -333,7 +333,7 @@ render(setup, {
     board.layout(wabashId, { area: { left: 62.1, top: 71.4, width: 29.76, height: 19.97, } });
     const wabashSpace = game.first(wabashId)!;
     wabashSpace.layout("trains", { area: { left:0, top: 0, width: 45, height: 100 }});
-    wabashSpace.layout("account", { area: { left:45, top: 0, width: 55, height: 50 }});
+    wabashSpace.layout("account", { area: { left:45, top: 0, width: 42, height: 50 }});
     wabashSpace.layout("stocks", { area: { left:45, top: 50, width: 55, height: 50 }});
 
     game.railwayCompanies.forEach((company) => {
@@ -396,19 +396,8 @@ render(setup, {
       const companySpace = game.all(company.id);
       game.layout(company.id, { area: { left: 81, top: 20 + (index * charterHeight + charterGap), width: 19, height: charterHeight }});
       companySpace.layout("trains", { area: { left: 4.5, top: 10, width: 40, height: 80 }});
-      const companyAccount = companySpace.first("account")!;
-      companySpace.layout("account", { area: { left:45, top: 10, width: 50, height: 35 }});
+      companySpace.layout("account", { area: { left:45, top: 10, width: 38, height: 35 }});
       companySpace.layout("stocks", { area: { left:45, top: 45, width: 50, height: 45 }});
-
-      companyAccount.appearance({
-        render: (account) => {
-          return (
-            <div className="company-account">
-              ${account.all('banknote').length}
-            </div>
-          );
-        }
-      });
     });
 
     ChicagoExpressSetup.railwayCompanies.forEach((company, index) => {
@@ -417,6 +406,9 @@ render(setup, {
           const trainCompany = company as RailwayCompany;
           return (
             <div className="company-panel__header">
+              <div className={`company-panel__cash${trainCompany.name === 'Wabash' ? ' company-panel__cash--wabash' : ''}`}>
+                ${trainCompany.first('account')?.all('banknote').length}
+              </div>
               <div className={`company-panel ${game.getSelectableCompanies().includes(trainCompany) && game.gameState == GameStates.SelectCompany ? "highlight" : ""}`}>
               </div>
             </div>
