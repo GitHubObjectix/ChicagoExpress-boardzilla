@@ -24,7 +24,7 @@ import {
   GameStates
 } from '../game/index.js';
 
-import { ChicagoExpressSetup, RailwayCompanies } from '../game/game-setup.js';
+import { ChicagoExpressSetup, CostAndIncome, RailwayCompanies } from '../game/game-setup.js';
 
 import './style.scss';
 
@@ -50,6 +50,8 @@ import trainImage_Wabash from './pieces/Wabash-train.svg'
 import counterImage_Wabash from './pieces/Wabash-counter.svg'
 import logo_Wabash from './assets/Wabash-logo.jpg'
 import image_House from './pieces/house.svg'
+import image_Train from './pieces/train.svg'
+import image_Development from './assets/development.jpg'
 import image_Banknote from './pieces/dollar-note.jpg'
 
 const companyImages: Record<string, {
@@ -65,6 +67,106 @@ const companyImages: Record<string, {
   CandO: { train: trainImage_CandO, counter: counterImage_CandO, logo: logo_CandO, stock: stockImage_CandO },
 };
 
+const FIELD_INFO_EVENT = 'chicago-express:field-info';
+
+function HexFieldInfoPanel() {
+  const [field, setField] = React.useState<HexagonalField | null>(null);
+
+  React.useEffect(() => {
+    const handleFieldInfo = (event: Event) => {
+      setField((event as CustomEvent<HexagonalField | null>).detail);
+    };
+
+    window.addEventListener(FIELD_INFO_EVENT, handleFieldInfo);
+    return () => window.removeEventListener(FIELD_INFO_EVENT, handleFieldInfo);
+  }, []);
+
+  if (!field) return null;
+
+  let terrainColor = "#e5c84b";
+  if (ChicagoExpressSetup.fieldIsForest(field.row, field.column)) {
+    terrainColor = "#527a42";
+  } else if (ChicagoExpressSetup.fieldIsMountain(field.row, field.column)) {
+    terrainColor = "#8b5e3c";
+  } else if (ChicagoExpressSetup.fieldIsCity(field.row, field.column)) {
+    terrainColor = "#c98c55";
+  } else if (ChicagoExpressSetup.fieldIsStartField(field.row, field.column)) {
+    terrainColor = "#a9a9a9";
+  } else if (ChicagoExpressSetup.fieldIsIndustry(field.row, field.column)) {
+    terrainColor = "#a9a9a9";
+  }
+
+  var costAndIncomeConfiguration = ChicagoExpressSetup.getCostAndIncomeConfiguration(field.row, field.column);
+  var fieldContainsTrain = !ChicagoExpressSetup.fieldIsStartField(field.row, field.column);
+
+  return (
+    <div className="hex-field-info">
+      <svg
+        className="hex-field-info__schematic"
+        viewBox="0 0 100 86"
+        role="img"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <polygon
+          points="25,1.5 74.5,1.5 98.5,43 74.5,84.5 25,84.5 1.5,43"
+          fill={terrainColor}
+          stroke="#28251f"
+          strokeWidth="2"
+        />
+        {fieldContainsTrain && (
+          <>
+            <image
+              href={image_Train}
+              x="8"
+              y="25"
+              width="50"
+              height="30"
+              preserveAspectRatio="xMidYMid meet"/>
+            <text
+              className="hex-field-info__cost-value"
+              x="25"
+              y="48"
+              textAnchor="middle">{costAndIncomeConfiguration[0]}</text>
+            {costAndIncomeConfiguration[1] != 0 && (
+              <text
+                className="hex-field-info__income-values"
+                x="45"
+                y="48"
+                textAnchor="middle">{costAndIncomeConfiguration[1]}</text>
+            )}
+          </>
+        )}
+        {ChicagoExpressSetup.fieldCanContainHouse(field.row, field.column) && (
+          <>
+            <image
+              href={image_House}
+              x="60"
+              y="13"
+              width="30"
+              height="50"
+              preserveAspectRatio="xMidYMid meet"/>
+            <text
+              className="hex-field-info__income-values"
+              x="75"
+              y="48"
+              textAnchor="middle">{costAndIncomeConfiguration[2] != 0 ? costAndIncomeConfiguration[2] : "$"}</text>
+          </>
+        )}
+        {ChicagoExpressSetup.fieldIsIndustry(field.row, field.column) && (
+          <>
+            <image
+              href={image_Development}
+              x="60"
+              y="24"
+              width="30"
+              height="32"
+              preserveAspectRatio="xMidYMid meet"/>
+          </>
+        )}
+      </svg>
+    </div>
+  );
+}
 
 render(setup, {
   boardSizes: [
@@ -128,6 +230,14 @@ render(setup, {
 
     const board = game.first(Board, 'board')!;
 
+    const fieldInfoPanel = board.first('field-info')!;
+    board.layout('field-info', {
+      area: { left: 44, top: 68.2, width: 11.17, height: 11.17 },
+    });
+    fieldInfoPanel.appearance({
+      render: () => <HexFieldInfoPanel />,
+    });
+
     const bank = game.first(Bank, 'bank')!;
     const bankAccount = bank.first('account')!;
     game.layout(bank.name, { area: { left: 81, top: 0, width: 19, height: 20 } });
@@ -183,9 +293,17 @@ render(setup, {
 
     game.all(HexagonalField).appearance({
       render: (hexField) => {
+        const publishFieldInfo = (detail: HexagonalField | null) => {
+          window.dispatchEvent(new CustomEvent(FIELD_INFO_EVENT, { detail }));
+        };
         return (
-          <div className={`hexagonal-field-inner ${game.gameState == GameStates.SelectFields && game.isFieldSelectable(hexField) ? "highlight" : ""}`}>
-          </div>
+          <div
+            className={`hexagonal-field-inner ${game.gameState == GameStates.SelectFields && game.isFieldSelectable(hexField) ? "highlight" : ""}`}
+            onMouseEnter={() =>
+              publishFieldInfo(hexField)
+            }
+            onMouseLeave={() => publishFieldInfo(null)}
+          />
         )
       }
     });

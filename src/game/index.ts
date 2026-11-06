@@ -421,6 +421,7 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
   account.createMany(1593, Banknote, 'banknote');
 
   const board = game.create(Board, 'board');
+  board.create(Space, 'field-info');
 
   // create spaces for the hex grid
   const map = board.create(ConnectedSpaceMap, 'map');
