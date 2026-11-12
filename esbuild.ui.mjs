@@ -23,6 +23,10 @@ await esbuild.build({
   outfile: 'build/ui/index.js',
   entryPoints: ['./src/ui/'],
   bundle: true,
+  alias: {
+    react: './node_modules/react',
+    'react-dom': './node_modules/react-dom',
+  },
   minify,
   plugins: [sassPlugin()]
 })
