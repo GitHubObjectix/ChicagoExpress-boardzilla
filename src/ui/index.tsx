@@ -181,30 +181,33 @@ render(setup, {
   },
   announcements: {
     dividend: game => (
-      <table className="dividend-table">
-        <thead>
-          <tr>
-            <th>Railway Company</th>
-            {game.players.map(p => (
-              <th key={p.id}>{p.name}</th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {game.railwayCompanies.map(c => (
-            <tr key={c.name}>
-              <th>{c.name}</th>
-
+      <div>
+        <h1>Dividends paid</h1>
+        <table className="dividend-table">
+          <thead>
+            <tr>
+              <th>Railway Company</th>
               {game.players.map(p => (
-                <td key={p.id}>
-                  ${game.dividends[c.name]?.[p.id] ?? 0}
-                </td>
+                <th key={p.id}>{p.name}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {game.railwayCompanies.map(c => (
+              <tr key={c.name}>
+                <th>{c.name}</th>
+
+                {game.players.map(p => (
+                  <td key={p.id}>
+                    ${game.dividends[c.name]?.[p.id] ?? 0}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
    ),
     victory: game => (
       <div>

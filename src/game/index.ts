@@ -758,8 +758,11 @@ export default createGame(ChicagoExpressPlayer, ChicagoExpressGame, game => {
                 () => {
                   // console.log('Chicago was reached, starting dividend phase');
                   game.wasChicagoReached = false;
+                },
+                () => {
                   Do.subflow('dividend-phase');
-
+                },
+                () => {
                   const hexFieldFortWayne = game.first(`hex-${ChicagoExpressSetup.FortWayne[0]}-${ChicagoExpressSetup.FortWayne[1]}`) as HexagonalField;
                   if (!hexFieldFortWayne!.first('trains-space')!.has(Piece, (piece) => piece.name.endsWith(`${ChicagoExpressSetup.railwayCompanies[RailwayCompanies.Wabash].id}-train`))) {
                     // console.log('Wabash line is opening, putting first train into Fort Wayne field');
